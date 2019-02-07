@@ -43,6 +43,7 @@
 /* memset */
 #include <string.h>
 
+#include <inttypes.h>
 
 #define SYNC_DWT_TRACE 		((char) 0x00)
 #define SYNC_DWT_END 		((char) 0x80)
@@ -165,6 +166,21 @@ static int uart_close(uart_obj * const uart)
 	return 0;
 }
 
+static int uart_debug_table(const char * const buffer, size_t len,
+			     unsigned int bpc)
+{
+	DEBUG("Table: data received %p size=%"PRId64"\n", buffer, len);
+	for (unsigned int i=0;i<len;i++) {
+		if (!(i%bpc))
+			printf("\n");
+
+		printf("0x%02X ", (unsigned char) buffer[i]);
+	}
+
+	putchar('\n');
+	DEBUG("Table: end of buffer\n");
+}
+
 /**
  * \brief this function receives information from the UART device 
  * \param obj: UART object reference.
@@ -174,19 +190,14 @@ int uart_receive(processing_obj * const obj, message_obj * const msg)
 {
 	uart_obj * const uart = (uart_obj * const) obj;
 	uart_private_data * const pdata = (uart_private_data *) uart->pdata;
-	char *ptr = msg->ptr(msg);
-	size_t max_sz = msg->total_len(msg);
-	size_t n = 0, readd;
+	char ptr[UART_INTERNAL_BUF_LEN_MAX];
+	size_t readd, n = 0;
 
-	DEBUG("Receiving\n");
-	while ((readd = read(pdata->fd, &ptr[readd] , max_sz-n)) > 0) {
-		n+=readd; 	
+	while ((readd = read(pdata->fd, &ptr[n], sizeof(ptr) - n)) > 0) {
+		n+=readd;
 	}
 
-	if (readd < 0)
-	       	n = readd;
-
-	printf("Finished received\n");
+	msg->write(msg, ptr, sizeof(ptr));
 	return n;
 }
 
