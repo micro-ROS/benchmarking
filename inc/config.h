@@ -14,6 +14,9 @@
 
 #define STRING_MAX_LENGTH		255
 
+/** Used in the uart receive callback */
+#define UART_INTERNAL_BUF_LEN_MAX	1024
+
 struct config_mgmr_st {
 	unsigned int test ;
 };
