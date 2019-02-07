@@ -81,8 +81,25 @@ static int packet_cb(struct libswo_context *ctx,
 static int decoder_swo_data_in(processing_obj *obj, message_obj *msg)
 {
 	decoder_swo_obj *dec_swo = (decoder_swo_obj *) obj;
-	decoder_swo_priv_data *pdata = (decoder_swo_priv_data *) dec_swo->pdata;
+	decoder_swo_priv_data *pdata =
+		(decoder_swo_priv_data *) dec_swo->pdata;
+	int ret;
 
+	DEBUG("Processing data\n");
+	ret = libswo_feed(pdata->swo_ctx,
+			       msg->ptr(msg), msg->length(msg));
+	if (ret) {
+		ERROR("Error while getting retrieving data\n");
+		ERROR("%s", libswo_strerror_name(ret));
+		return -1;
+	}
+
+	ret = libswo_decode(pdata->swo_ctx, 0);
+	if (ret) {
+		ERROR("Error while getting decoding data\n");
+		ERROR("%s", libswo_strerror_name(ret));
+		return -1;
+	}
 
 	return 0;
 }
