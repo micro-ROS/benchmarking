@@ -4,4 +4,4 @@ cd ext
 ./recipe
 cd ..
 
-#autoreconf -i ./
+autoreconf -i ./
