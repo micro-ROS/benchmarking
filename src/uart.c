@@ -166,42 +166,28 @@ static int uart_close(uart_obj * const uart)
 }
 
 /**
- * @brief this function allows
+ * \brief this function receives information from the UART device 
+ * \param obj: UART object reference.
+ * \param msg: message object where data is going to be receive.
  */
-int uart_receive(processing_obj *obj, message_obj *msg)
+int uart_receive(processing_obj * const obj, message_obj * const msg)
 {
-	int fd, fd_uart;
-	int n, readd, written = 0;
-	int rc = -1;
+	uart_obj * const uart = (uart_obj * const) obj;
+	uart_private_data * const pdata = (uart_private_data *) uart->pdata;
+	char *ptr = msg->ptr(msg);
+	size_t max_sz = msg->total_len(msg);
+	size_t n = 0, readd;
 
 	DEBUG("Receiving\n");
-#if 0
-
-	while ((readd = read(fd_uart, buf, sizeof(buf))) > - 1) {
-		while (written != readd) {
-			n = write(fd, &buf[written], readd - written);
-			if (n<0) {
-				printf("Error while writing to file");
-				goto fini;
-			}
-			written += n;
-		}
-
-		written = 0;
+	while ((readd = read(pdata->fd, &ptr[readd] , max_sz-n)) > 0) {
+		n+=readd; 	
 	}
 
-	rc = 0;
-	printf("Finished getting data\n");
+	if (readd < 0)
+	       	n = readd;
 
-fini:
-	close(fd_uart);
-uart_fail:
-	close(fd);
-file_fail:
-argc_fail:
-	printf("Finished application leaving\n");
-#endif
-	return rc;
+	printf("Finished received\n");
+	return n;
 }
 
 int uart_init(uart_obj * const uart)
