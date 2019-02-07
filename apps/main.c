@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 	pipeline.attach_sink(&pipeline, (processing_obj *) &decoder);
 
 	while (1) {
-		if (pipeline.stream_data(&pipeline)) {
+		if (pipeline.stream_data(&pipeline) < 0) {
 			WARNING("Problem while streaming\n");
 		}
 	}
