@@ -80,6 +80,7 @@ static int pipeline_stream_data(pipeline_obj * const obj)
 	pipeline_private_data * const pdata =
 	       		(pipeline_private_data * const ) obj->pdata;
 	message_obj *msg = &pdata->msg;
+	int rc = 0;
 
 
 	if (pdata->count < 2) {
@@ -88,14 +89,20 @@ static int pipeline_stream_data(pipeline_obj * const obj)
 	}
 
 	for (unsigned int i=0; i<(pdata->count-1); i++) {
-		if (pdata->proc_objs[i]->data_out(pdata->proc_objs[i], msg)) {
+		DEBUG("Data incoming from element\n");
+		if (pdata->proc_objs[i]->data_out(pdata->proc_objs[i], msg) < 0) {
+			rc = -1;
 			break;
 		}
 
-		if (pdata->proc_objs[i+1]->data_in(pdata->proc_objs[i+1], msg)) {
+		DEBUG("Data passed to the next element\n");
+		if (pdata->proc_objs[i+1]->data_in(pdata->proc_objs[i+1], msg) < 0) {
+			rc = -1;
 			break;
 		}
 	}
+
+	return rc;
 }
 
 /**
