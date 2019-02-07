@@ -1,0 +1,72 @@
+#!/bin/sh
+
+RED="\e[31m"
+RESET="\e[0m"
+GREEN="\e[92m"
+
+git_retrieve()
+{
+	if [ $# -ne 3 ]; then
+		printf "${RED}Not enought param ${RESET}\n"
+		return	
+	fi
+
+	if [ -e $2 ]; then
+		rm -rf $2
+	fi
+
+	git clone $1 $2
+	cd $2
+	git checkout $3
+	cd ..
+}
+
+recipes=$(find . -maxdepth 1 -iname "*.mk")
+
+for file in $recipes 
+do
+	. ${file}
+	filename="${file##*/}"
+	filename="${filename%.*}"
+
+	printf "\n${GREEN}===> Processing packet $file ${RESET}\n\n"
+
+	git_addr=$(eval echo \$"${filename}_git")
+	if [ -z $git_addr ]; then
+	       printf "${RED} In ${file}: ${filename}_git var does not exits ${RESET}\n"
+	       continue
+        fi
+
+	git_src_dir=$(eval echo \$"${filename}_src_dir")
+	if [ -z $git_src_dir ]; then
+	       printf "${RED} In ${file}: ${filename}_src_dir does not exits ${RESET}\n"
+	       continue
+        fi
+
+	git_version=$(eval echo \$"${filename}_version")
+	if [ -z $git_version ]; then
+	       printf "${RED}In ${file}: ${filename}_version does not exits ${RESET}\n"
+	       continue
+        fi
+
+	build_cmd=$(eval echo \$"${filename}_build_cmd")
+	if [ -z $git_version ]; then
+	       printf "${RED}In ${file}: ${filename}_build_cmd does not exits ${RESET}\n"
+	       continue
+        fi
+
+	git_retrieve $git_addr $git_src_dir $git_version
+
+	cd $git_src_dir
+	eval $build_cmd
+
+	if [ $? -ne 0 ]; then
+	       printf "${RED} ${file}: ${filename}_build_cmd did not succeed  ${RESET}\n"
+	       exit 255
+        fi
+
+	cd ..
+done
+
+printf "\n******Done getting packets******\n"
+

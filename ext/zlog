@@ -1,0 +1,7 @@
+# Basic recipe
+
+zlog_git=https://github.com/HardySimpson/zlog.git
+zlog_src_dir=./zlog
+zlog_version=latest-stable
+
+zlog_build_cmd="CFLAGS=-D_DEFAULT_SOURCE  make"
