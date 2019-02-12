@@ -29,7 +29,8 @@ static void default_packet_handler(const union libswo_packet *packet,
 			.name = str(pkt_type)	\
 		}
 static struct {
-	void (*pkt_cb) (const union libswo_packet *packet, unsigned int c, const char *s);
+	void (*pkt_cb) (const union libswo_packet *packet,
+		       	unsigned int c, const char *s);
 	unsigned int count;
 	char *name;
 } default_handlers[] = {
