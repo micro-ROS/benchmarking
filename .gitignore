@@ -110,3 +110,6 @@ tags
 libtool
 
 Makefile
+
+ext/*
+!ext/*.mk
