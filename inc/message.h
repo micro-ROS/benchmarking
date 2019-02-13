@@ -9,7 +9,7 @@ typedef size_t (*message_write_cb	)
 		(message_obj * const obj, char * const buffer, size_t len);
 
 typedef size_t (*message_read_cb	)
-		(message_obj * const obj, char ** const buffer);
+		(message_obj * const obj, char * const buffer);
 
 typedef size_t (*message_length_cb	)
 		(message_obj * const obj);
