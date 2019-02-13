@@ -186,7 +186,7 @@ static int uart_debug_table(const char * const buffer, size_t len,
  * \param obj: UART object reference.
  * \param msg: message object where data is going to be receive.
  */
-int uart_receive(processing_obj * const obj, message_obj * const msg)
+size_t uart_receive(processing_obj * const obj, message_obj * const msg)
 {
 	uart_obj * const uart = (uart_obj * const) obj;
 	uart_private_data * const pdata = (uart_private_data *) uart->pdata;
