@@ -22,6 +22,6 @@ typedef struct {
 	};
 } pkt_to_form;
 
-int pkt_convert(pkt_to_form * const ptf, message_obj * const obj);
+size_t pkt_convert(pkt_to_form * const ptf, message_obj * const obj);
 
 #endif /* __PKT_CONVERTER_H__*/

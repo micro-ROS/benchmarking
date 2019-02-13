@@ -499,7 +499,7 @@ static struct packet_type_info ptis[] = {
 	},
 };
 
-static int pkt_write_to_cjson(pkt_to_form * const ptf,
+static size_t pkt_write_to_cjson(pkt_to_form * const ptf,
 			      const union libswo_packet *pkt)
 {
 	struct packet_type_info  *pti = &ptis[pkt->type];
@@ -507,10 +507,9 @@ static int pkt_write_to_cjson(pkt_to_form * const ptf,
 	char json_char[32];
 	cJSON *json_root;
 	cJSON *json_value;
-	size_t json_sz;
+	size_t json_sz, total_sz = 0;
 	unsigned int json_nbr;
 	char *json_str;
-	
 
 	if (!(json_root = cJSON_AddObjectToObject(ptf->root, pti->name))) {
 		ERROR("Creating Node root node packet\n");
@@ -567,12 +566,13 @@ static int pkt_write_to_cjson(pkt_to_form * const ptf,
 		}
 
 		cJSON_AddItemToObject(json_root, pvi->name, json_value);
+		total_sz +=  sizeof(cJSON);
 	}
 
 	return 0;
 }
 
-int pkt_convert(pkt_to_form * const ptf, message_obj * const obj)
+size_t pkt_convert(pkt_to_form * const ptf, message_obj * const obj)
 {
 	union libswo_packet *packet = (union libswo_packet *) obj->ptr(obj);
 
@@ -584,10 +584,12 @@ int pkt_convert(pkt_to_form * const ptf, message_obj * const obj)
 
 	switch (ptf->fmt) {
 	case PKT_CONVERTER_CJSON:
-		pkt_write_to_cjson(ptf, packet);
+		return pkt_write_to_cjson(ptf, packet);
 	break;
 	default:	
 		WARNING("Type not implemented\n");
 	break;
 	}
+
+	return -1;
 }
