@@ -69,50 +69,127 @@ void app_print_usage(const char *name)
 	fprintf(stdout, USAGE, name);
 }
 
+#define DECODER_CONFIG_PATH_DEFAULT	"/tmp/default_decoder.ini"
+void decoder_init_config(config_ini_obj *cfg)
+{
+	DEBUG("initializing config...\n");
+
+	memset(cfg, 0, sizeof(*cfg));
+	if (config_ini_init(cfg)) {
+		exit(EXIT_FAILURE);
+	}
+
+	if (cfg->open_cfg(cfg, DECODER_CONFIG_PATH_DEFAULT)) {
+		exit(EXIT_FAILURE);
+	}
+
+	DEBUG("config initialized\n");
+	return 0;
+}
+
+void decoder_init_uart(uart_obj *uart)
+{
+	cfg_param uart_cfg = {
+		.section = "SWO_UART",
+	};
+
+	DEBUG("initializing uart...\n");
+
+	memset(&uart, 0, sizeof(*uart));
+	if (uart_init(uart)) {
+		exit(EXIT_FAILURE);
+	}
+
+	uart_cfg.section = "device";
+	uart_cfg.type = CONFIG_STR;
+	if (src.uart_set_dev(uart, CONFIG_HELPER_GET_STR(&uart_cfg))) {
+		exit(EXIT_FAILURE);
+	}
+
+	if (src.uart_init_dev(uart)) {
+		exit(EXIT_FAILURE);
+	}
+
+	uart_cfg.section = "baudrate";
+	uart_cfg.type = CONFIG_UNSIGNED_INT;
+	if (src.uart_set_baudrate(uart, CONFIG_HELPER_GET_U32(&uart_cfg))) {
+		exit(EXIT_FAILURE);
+	}
+
+	DEBUG("uart initialized\n");
+	return 0;
+}
+
+void decoder_init_form_cjson(form_obj *obj)
+{
+	DEBUG("initializing cjson form...\n");
+	
+	if (form_cjson_init(obj)) {
+		exit(EXIT_FAILURE);
+	}
+
+	DEBUG("cjson form initialized...\n");
+}
+
+void decoder_init_decoder_swo(form_obj *obj)
+{
+	DEBUG("initializing decoder swo...\n");
+
+	if (decoder_swo_init(obj)) {
+		exit(EXIT_FAILURE);
+	}
+
+	DEBUG("decoder swo initialized...\n");
+}
+
+int decoder_init_file_sink(file_obj *obj)
+{
+	cfg_param file_cfg = {
+		.section = "OUTPUT_FILE",
+	};
+	DEBUG("initializing file sink...\n");
+
+	if (file_init(obj)) {
+		exit(EXIT_FAILURE);
+	}
+
+	file_cfg.section = "path";
+	file_cfg.type = CONFIG_STR;
+	if (obj->set_path(CONFIG_HELPER_GET_STR(&file_cfg), FILE_WRONLY)) {
+		exit(EXIT_FAILURE);
+	}
+
+	DEBUG("ile sink initialized.\n");
+	return 0;
+}
+
 int main(int argc, char **argv)
+
 {
 	int option_index = 0;
-	uart_obj	src;
-	decoder_swo_obj	decoder;
+	config_ini	cfgini;
+	uart_obj	uart_src;
+	form_obj	cjson_proc;
+	decoder_swo_obj	decoder_proc;
+	file_obj 	file_sink;
+
 	pipeline_obj	pipeline;
 
-	memset(&src, 0, sizeof(src));
-	memset(&decoder, 0, sizeof(decoder));
-	memset(&pipeline, 0, sizeof(pipeline));
+	decoder_init_config(&cfgini);
 
-	if (uart_init(&src)) {
-		exit(EXIT_FAILURE);
-	}
-	DEBUG("UART Initialized \n");
-
-	if (src.uart_set_dev(&src, "/dev/ttyUSB0")) {
-		exit(EXIT_FAILURE);
-	}
-	DEBUG("UART path set\n");
-
-	if (src.uart_init_dev(&src)) {
-		exit(EXIT_FAILURE);
-	}
-	DEBUG("UART is opened\n");
-
-	if (src.uart_set_baudrate(&src, 115200U)) {
-		exit(EXIT_FAILURE);
-	}
-	DEBUG("UART baudrate set\n");
-
-	if (decoder_swo_init(&decoder)) {
-		exit(EXIT_FAILURE);
-	}
-	DEBUG("SWO decoder initialized \n");
+	decoder_init_uart(&uart_src);
+	decoder_init_decoder_swo(&decoder_proc);
+	decoder_init_form_cjson(&cjson_proc);
+	decoder_init_file_sink(&file_sink);
 
 	if (pipeline_init(&pipeline)) {
 		exit(EXIT_FAILURE);
 	}
-	DEBUG("Pipeline initialized\n");
-
-	DEBUG("Starting Attach\n");
-	pipeline.attach_src(&pipeline, (processing_obj *) &src);
-	pipeline.attach_sink(&pipeline, (processing_obj *) &decoder);
+	DEBUG("Attaching elements\n");
+	pipeline.attach_src(&pipeline, (processing_obj *) &uart_src);
+	pipeline.attach_proc(&pipeline, (processing_obj *) &decoder_proc);
+	pipeline.attach_proc(&pipeline, (processing_obj *) &cjson_proc);
+	pipeline.attach_sink(&pipeline, (processing_obj *) &file_sink);
 
 	while (1) {
 		if (pipeline.stream_data(&pipeline) < 0) {
