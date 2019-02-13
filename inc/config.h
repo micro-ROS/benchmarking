@@ -17,6 +17,8 @@
 /** Used in the uart receive callback */
 #define UART_INTERNAL_BUF_LEN_MAX	1024
 
+/** The maximum length of the string */
+#define CONFIG_STR_LEN_MAX		512
 
 /** This configuration will be taken either from a .INI file like
  *  or parsed from the command line arguments.
@@ -63,22 +65,20 @@ typedef struct config_obj_st config_obj;
 typedef cfg_param * const (*config_get_value_cb)
 			  (config_obj * const obj, cfg_param * const param);
 
-typedef cfg_param * const (*config_get_value_cb)
-			  (config_obj * const obj, cfg_param * const param);
-
-typedef void		  (*config_set_value_cb)
+typedef int		  (*config_set_value_cb)
 			  (config_obj * const obj, cfg_param * const param);
 
 struct config_obj_st {
 	config_get_value_cb 	get_value;
 	config_set_value_cb 	set_value;
+
 	void 			*pdata;
 };
 
 
-int config_init(config_obj *str);
+int config_init(config_obj *obj);
 config_obj * const config_get_instance(void);
-int config_fini(config_obj *str);
+int config_fini(config_obj *obj);
 
 #define CONFIG_HELPER_GET_STR(param_info) \
 		config_get_instance()->get_value(config_get_instance(), param_info)->value.str
