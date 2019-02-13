@@ -105,6 +105,8 @@ tags
 [._]*.un~
 
 #libtoo
+.deps/*
+.libs/*
 */.deps/*
 */.libs/*
 libtool
