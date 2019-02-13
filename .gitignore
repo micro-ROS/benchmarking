@@ -105,8 +105,8 @@ tags
 [._]*.un~
 
 #libtoo
-src/.deps/*
-src/.libs/*
+/.deps/*
+/.libs/*
 libtool
 
 Makefile
