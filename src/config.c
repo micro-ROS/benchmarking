@@ -13,9 +13,9 @@ typedef struct {
 
 static config_priv_data cfg_pdata;
 
-int config_init(config_obj *obj)
+int config_init(config_obj * const obj)
 {
-	config_priv_data *pdata = &cfg_pdata; 
+	config_priv_data *pdata = &cfg_pdata;
 
 	if (pdata->is_init) {
 		ERROR("configuration already initialized\n");
@@ -24,13 +24,30 @@ int config_init(config_obj *obj)
 
 	obj->pdata = (void *) pdata;
 	pdata->is_init = true;
-	
+
 	return 0;
 }
 
 config_obj * const config_get_instance(void)
 {
-	return NULL;
+	config_priv_data *pdata = &cfg_pdata;
+
+	if (!pdata) {
+		ERROR("Cannot get instance: Instance not allocated\n");
+		return -1;
+	}
+
+	if (!pdata->obj_parent) {
+		ERROR("No config object allocated\n");
+		return -1;
+	}
+
+	if (!pdata->is_init) {
+		ERROR("Cannot get instance: Instance not initialized\n");
+		return -1;
+	}
+
+	return pdata->obj_parent;
 }
 
 static cfg_param * const config_default_get_value(config_obj * const obj,
@@ -55,7 +72,7 @@ int config_fini(config_obj *obj)
 		WARNING("Configuration Already deinit\n");
 		return -1;
 	}
-	
+
 	pdata->is_init = false;
 	obj->get_value = config_default_get_value;
 	obj->set_value = config_default_set_value;

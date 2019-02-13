@@ -47,7 +47,7 @@ typedef struct {
 
 	/** Values stored as union depending on the value of it */
 	union {
-		char		*str;
+		const char	*str;
 		int		s32;
 		unsigned int	u32;
 	} value;
@@ -76,9 +76,9 @@ struct config_obj_st {
 };
 
 
-int config_init(config_obj *obj);
+int config_init(config_obj * const obj);
 config_obj * const config_get_instance(void);
-int config_fini(config_obj *obj);
+int config_fini(config_obj * const obj);
 
 #define CONFIG_HELPER_GET_STR(param_info) \
 		config_get_instance()->get_value(config_get_instance(), param_info)->value.str
