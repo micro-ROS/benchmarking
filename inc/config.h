@@ -20,6 +20,13 @@
 /** The maximum length of the string */
 #define CONFIG_STR_LEN_MAX		512
 
+/** Max number of file that can be opened */
+#define FILE_COUNT_MAX			16
+
+/** Max number of uart device that can be openned */
+#define UART_COUNT_MAX			1
+
+
 /** This configuration will be taken either from a .INI file like
  *  or parsed from the command line arguments.
  *  As for now the parameter cannot be changed while applicaiton is running
