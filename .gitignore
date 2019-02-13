@@ -103,3 +103,10 @@ Session.vim
 tags
 # Persistent undo
 [._]*.un~
+
+#libtoo
+src/.deps/*
+src/.libs/*
+libtool
+
+Makefile
