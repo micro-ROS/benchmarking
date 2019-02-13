@@ -97,10 +97,14 @@ static size_t message_write_buffer(message_obj * const obj,
 	return min;
 }
 
-static size_t message_read_buffer(message_obj * const obj, char ** const buffer)
+static size_t message_read_buffer(message_obj * const obj, char * const buffer)
 {
-	*buffer = obj->ptr(obj);
-	return obj->length(obj);
+	size_t min = obj->length(obj) > len ? 
+					obj->length(obj) : len;
+
+	memcpy(buffer, obj->ptr(obj), min);
+
+	return min;
 }
 
 static size_t message_length_buffer(message_obj * const obj)
