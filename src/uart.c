@@ -56,12 +56,12 @@
 #define SYNC_DWT_PACKET_SIZE	6
 #define SYNC_PACKET_SIZE	5
 
+/** TODO create a common interface file and uart */
 /* Number of Max UART used */
-#define UART_MAX_INSTANCE 1
 
 typedef struct  {
 	/** PATH to the char device */
-	char dev_path[STRING_MAX_LENGTH];
+	char dev_path[UART_COUNT_MAX];
 	/** termios terminal configuraion settings */
 	struct termios tty;	
 	/** UART file descriptor */
