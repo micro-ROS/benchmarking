@@ -88,8 +88,8 @@ static size_t message_write_buffer(message_obj * const obj,
 				 char * const buffer, size_t len)
 {
 	message_priv_data *pdata = (message_priv_data *)obj->pdata;
-	size_t min = obj->length(obj) > len ? 
-					obj->length(obj) : len;
+	size_t min = obj->totlen(obj) > len ? 
+					obj->totlen(obj) : len;
 
 	memcpy(obj->ptr(obj), buffer, min);
 	pdata->length = min;
@@ -100,7 +100,7 @@ static size_t message_write_buffer(message_obj * const obj,
 static size_t message_read_buffer(message_obj * const obj, char * const buffer)
 {
 	size_t min = obj->length(obj) > len ? 
-					obj->length(obj) : len;
+					obj->len(obj) : len;
 
 	memcpy(buffer, obj->ptr(obj), min);
 
