@@ -12,7 +12,7 @@
 typedef struct {
 	cfg_param param;
 	/**
-	 * Using the address of the pointer in case of  changes 
+	 * Using the address of the pointer in case of  changes
 	 */
 	cJSON **parent;
 } json_config;
@@ -24,8 +24,10 @@ typedef struct {
 	cJSON	*soft_info;
 	cJSON	*packets;
 	cJSON	*raw_packets;
+	cJSON	*last_packet;
 
 	bool	is_used;
+	bool	is_nfirstrun;
 	json_config *json_cfgs;
 	pkt_to_form *ptf;
 } form_json_priv_data;
@@ -69,13 +71,30 @@ static json_config form_json_cfgs[] = {
 	JSON_CONFIG_INIT("soft_info", "config_nuttx", CONFIG_STR, soft_info),
 };
 
-
-static int form_json_receive_data(processing_obj *obj, message_obj *msg)
+static size_t form_json_send_data(processing_obj * const obj,
+				  message_obj * const msg)
 {
-	int rc = -1;
+	size_t rc = -1;
 	form_json_priv_data *jpdata = (form_json_priv_data *)
 						((form_obj *) obj)->pdata;
+	if (!jpdata->is_nfirstrun) {
+		rc = cJSON_PrintPreallocated(jpdata->root_benchmarking,
+				       msg->ptr(msg), msg->length(msg), true);
+		jpdata->is_nfirstrun = 1;
+	} else {
+		rc = cJSON_PrintPreallocated(jpdata->ptf->root->child,
+				       msg->ptr(msg), msg->length(msg), true);
+	}
 
+	cJSON_Delete(jpdata->ptf->root->child);
+	return rc;
+}
+
+static size_t form_json_receive_data(processing_obj * const obj,
+				     message_obj * const msg)
+{
+	form_json_priv_data *jpdata = (form_json_priv_data *)
+						((form_obj *) obj)->pdata;
 	return pkt_convert(jpdata->ptf, msg);
 }
 
@@ -109,7 +128,7 @@ static int form_json_init_nodes(form_obj * const obj)
 	cJSON *parent;
 	char *name;
 	float value_fl;
-	char *value_str;
+	char const * value_str;
 	int rc = -1;
 
 	for (unsigned int i=0; i<ARRAY_SIZE(form_json_cfgs);i++) {
@@ -157,7 +176,7 @@ static int form_json_init_session(form_obj *obj)
 {
 	form_json_priv_data *pdata = (form_json_priv_data *) obj->pdata;
 	json_config *json_cfgs = pdata->json_cfgs;
-	
+
 	for (unsigned int i=0; i < ARRAY_SIZE(json_cfgs); i++) {
 		if (form_json_init_nodes(obj)) {
 			return -1;
@@ -208,10 +227,10 @@ int form_json_init(form_obj * const obj)
 		goto init_session_failed;
 	}
 
-	/* Set up processing callbacks that will translate the 
+	/* Set up processing callbacks that will translate the
 	 * decoder information to json style element*/
 	proc_obj->data_in = form_json_receive_data;
-	proc_obj->data_out = NULL;
+	proc_obj->data_out = form_json_send_data;
 
 	return 0;
 init_session_failed:
