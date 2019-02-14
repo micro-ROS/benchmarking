@@ -73,7 +73,7 @@ typedef struct  {
 	/** Manage multi thread concurency */
 } uart_private_data;
 
-static uart_private_data uarts_instances[UART_MAX_INSTANCE] = {0};
+static uart_private_data uarts_instances[UART_COUNT_MAX] = {0};
 
 static int uart_get_instance(uart_obj * const uart)
 {
