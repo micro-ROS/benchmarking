@@ -172,7 +172,7 @@ static int form_json_init_nodes(form_obj * const obj)
 	return 0;
 }
 
-static int form_json_init_session(form_obj *obj)
+static int form_json_init_session(form_obj * const obj)
 {
 	form_json_priv_data *pdata = (form_json_priv_data *) obj->pdata;
 	json_config *json_cfgs = pdata->json_cfgs;
@@ -186,7 +186,7 @@ static int form_json_init_session(form_obj *obj)
 	return 0;
 }
 
-static int form_json_fini_session(form_obj *obj)
+static int form_json_fini(form_obj * const obj)
 {
 	DEBUG("To Be implemented\n");
 	return 0;
