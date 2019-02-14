@@ -9,21 +9,23 @@ typedef struct {
 
 
 
-static int processing_data_in_default(processing_obj *obj, message_obj *msg)
+static size_t processing_data_in_default(processing_obj * const obj,
+				      message_obj * const msg)
 {
 	WARNING("No callback defined yet\n");
 	return -1;
 }
 
 
-static int processing_data_out_default(processing_obj *obj, message_obj *msg)
+static size_t processing_data_out_default(processing_obj * const obj,
+				          message_obj * const msg)
 {
 	WARNING("No callback defined yet\n");
 	return -1;
 }
 
 
-int processing_init(processing_obj *obj)
+int processing_init(processing_obj * const obj)
 {
 	DEBUG("Initializing object %p\n", obj);
 
@@ -34,7 +36,7 @@ int processing_init(processing_obj *obj)
 }
 
 
-int processing_fini(processing_obj *obj)
+int processing_fini(processing_obj * const obj)
 {
 	DEBUG("Denitializing object %p\n", obj);
 
