@@ -72,7 +72,7 @@ static int file_free_instance(file_obj * const obj)
 	return 0;
 }
 
-static int file_set_path(file_obj * const obj, message_obj * const path,
+static int file_set_path(file_obj * const obj, const char * const path,
 			 enum file_mode mode)
 {
 	file_priv_data *pdata = (file_priv_data *) obj->pdata;
@@ -82,7 +82,7 @@ static int file_set_path(file_obj * const obj, message_obj * const path,
 		return -1;
 	}
 
-	strncpy(pdata->file_path, path->ptr(path), sizeof(pdata->file_path) - 1);
+	strncpy(pdata->file_path, path, sizeof(pdata->file_path) - 1);
 	pdata->mode = mode;
 	pdata->is_open = true;
 
