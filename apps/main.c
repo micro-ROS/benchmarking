@@ -3,10 +3,14 @@
 
 #include <debug.h>
 
+#include <config.h>
+#include <config_ini.h>
+#include <decoder_swo.h>
+#include <form.h>
+#include <file.h>
+#include <pipeline.h>
 #include <processing.h>
 #include <uart.h>
-#include <pipeline.h>
-#include <decoder_swo.h>
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -84,7 +88,6 @@ void decoder_init_config(config_ini_obj *cfg)
 	}
 
 	DEBUG("config initialized\n");
-	return 0;
 }
 
 void decoder_init_uart(uart_obj *uart)
@@ -102,60 +105,63 @@ void decoder_init_uart(uart_obj *uart)
 
 	uart_cfg.section = "device";
 	uart_cfg.type = CONFIG_STR;
-	if (src.uart_set_dev(uart, CONFIG_HELPER_GET_STR(&uart_cfg))) {
+	if (uart->uart_set_dev(uart,
+				  CONFIG_HELPER_GET_STR(&uart_cfg))) {
 		exit(EXIT_FAILURE);
 	}
 
-	if (src.uart_init_dev(uart)) {
+	if (uart->uart_init_dev(uart)) {
 		exit(EXIT_FAILURE);
 	}
 
 	uart_cfg.section = "baudrate";
 	uart_cfg.type = CONFIG_UNSIGNED_INT;
-	if (src.uart_set_baudrate(uart, CONFIG_HELPER_GET_U32(&uart_cfg))) {
+	if (uart->uart_set_baudrate(uart,
+				       CONFIG_HELPER_GET_U32(&uart_cfg))) {
 		exit(EXIT_FAILURE);
 	}
 
 	DEBUG("uart initialized\n");
-	return 0;
 }
 
-void decoder_init_form_cjson(form_obj *obj)
+void decoder_init_form_cjson(form_obj *form)
 {
 	DEBUG("initializing cjson form...\n");
 	
-	if (form_cjson_init(obj)) {
+	if (form_cjson_init(form)) {
 		exit(EXIT_FAILURE);
 	}
 
 	DEBUG("cjson form initialized...\n");
 }
 
-void decoder_init_decoder_swo(form_obj *obj)
+void decoder_init_decoder_swo(decoder_swo_obj *dec)
 {
 	DEBUG("initializing decoder swo...\n");
 
-	if (decoder_swo_init(obj)) {
+	if (decoder_swo_init(dec)) {
 		exit(EXIT_FAILURE);
 	}
 
 	DEBUG("decoder swo initialized...\n");
 }
 
-int decoder_init_file_sink(file_obj *obj)
+int decoder_init_file_sink(file_obj *file)
 {
 	cfg_param file_cfg = {
 		.section = "OUTPUT_FILE",
 	};
 	DEBUG("initializing file sink...\n");
 
-	if (file_init(obj)) {
+	if (file_init(file)) {
 		exit(EXIT_FAILURE);
 	}
 
 	file_cfg.section = "path";
 	file_cfg.type = CONFIG_STR;
-	if (obj->set_path(CONFIG_HELPER_GET_STR(&file_cfg), FILE_WRONLY)) {
+	if (file->file_set_path(file,
+				CONFIG_HELPER_GET_STR(&file_cfg),
+			        FILE_WRONLY)) {
 		exit(EXIT_FAILURE);
 	}
 
@@ -167,7 +173,7 @@ int main(int argc, char **argv)
 
 {
 	int option_index = 0;
-	config_ini	cfgini;
+	config_ini_obj	cfgini;
 	uart_obj	uart_src;
 	form_obj	cjson_proc;
 	decoder_swo_obj	decoder_proc;
@@ -187,8 +193,8 @@ int main(int argc, char **argv)
 	}
 	DEBUG("Attaching elements\n");
 	pipeline.attach_src(&pipeline, (processing_obj *) &uart_src);
-	pipeline.attach_proc(&pipeline, (processing_obj *) &decoder_proc);
-	pipeline.attach_proc(&pipeline, (processing_obj *) &cjson_proc);
+	pipeline.attach_proc(&pipeline, (processing_obj *) &decoder_proc, NULL);
+	pipeline.attach_proc(&pipeline, (processing_obj *) &cjson_proc, NULL);
 	pipeline.attach_sink(&pipeline, (processing_obj *) &file_sink);
 
 	while (1) {
@@ -226,7 +232,7 @@ int main(int argc, char **argv)
 		}
 	}
 #endif
-	
 
+	return -1;
 }
 
