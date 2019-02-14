@@ -14,7 +14,7 @@ typedef struct file_obj_st file_obj;
 
 /** This callback will set the path and access mode to the file */
 typedef int (*file_set_path_cb)(file_obj * const obj,
-				message_obj * const path, 
+				 const char * const path, 
 			     	enum file_mode);
 
 /** This callback will open the file set to */
