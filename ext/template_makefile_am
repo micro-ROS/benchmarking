@@ -1,0 +1,5 @@
+ACLOCAL_AMFLAGS = -I m4
+
+lib_LTLIBRARIES = @@LIBNAME@@.la
+@@LIBNAME@@_la_SOURCES = @@LIBSOURCES@@
+@@LIBNAME@@_la_LDFLAGS = -version-info 0:0:0
