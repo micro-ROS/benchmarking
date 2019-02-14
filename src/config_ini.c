@@ -7,7 +7,7 @@
 
 typedef struct {
 	ini_t *ini_cfg;
-	message_obj *path_cfg;
+	const message_obj *path_cfg;
 	bool is_init;
 	bool is_cfg_init;
 } config_ini_priv_data;
