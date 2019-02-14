@@ -12,7 +12,7 @@ struct form_obj_st {
 	void *pdata;
 };
 
-int form_init_json(form_obj * const obj);
-int form_fini_json(form_obj * const obj);
+int form_cjson_init(form_obj * const obj);
+int form_cjson_fini(form_obj * const obj);
 
 #endif /*  __FORM_H__ */
