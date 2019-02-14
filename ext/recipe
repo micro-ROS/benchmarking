@@ -3,6 +3,7 @@
 RED="\e[31m"
 RESET="\e[0m"
 GREEN="\e[92m"
+YELLOW="\e[93m"
 
 git_retrieve()
 {
@@ -18,6 +19,11 @@ git_retrieve()
 	git clone $1 $2
 	cd $2
 	git checkout $3
+
+	if [ $? -eq 0 ]; then
+		touch .stamp_downloaded
+	fi
+
 	cd ..
 }
 
@@ -55,16 +61,29 @@ do
 	       continue
         fi
 
-	git_retrieve $git_addr $git_src_dir $git_version
+	if [ ! -e $git_src_dir/.stamp_downloaded ]; then
+		git_retrieve $git_addr $git_src_dir $git_version
+	else 
+		printf "${YELLOW} ${file}: Already got sources. " 
+		printf	"If you want to redownload it delete .stamp_download${RESET}\n"
+	fi
+
+
+	if [ -e $git_src_dir/.stamp_built ]; then
+		printf "${YELLOW} ${file}: Already got sources. " 
+		printf	"If you want to rebuild it delete .stamp_built${RESET}\n"
+		continue
+	fi
 
 	cd $git_src_dir
 	eval $build_cmd
 
 	if [ $? -ne 0 ]; then
-	       printf "${RED} ${file}: ${filename}_build_cmd did not succeed  ${RESET}\n"
+	       printf "${RED} ${file}: ${filename}_build_cmd did not succeed${RESET}\n"
 	       exit 255
         fi
 
+	touch .stamp_built
 	cd ..
 done
 
