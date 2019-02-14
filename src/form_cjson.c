@@ -126,7 +126,7 @@ static int form_json_init_nodes(form_obj * const obj)
 	form_json_priv_data *jpdata = (form_json_priv_data *) obj->pdata;
 	cfg_param *cfg;
 	cJSON *parent;
-	char *name;
+	const char *name;
 	float value_fl;
 	char const * value_str;
 	int rc = -1;
@@ -186,13 +186,13 @@ static int form_json_init_session(form_obj * const obj)
 	return 0;
 }
 
-static int form_json_fini(form_obj * const obj)
+int form_cjson_init(form_obj * const obj)
 {
 	DEBUG("To Be implemented\n");
 	return 0;
 }
 
-int form_json_init(form_obj * const obj)
+int form_cjson_fini(form_obj * const obj)
 {
 	processing_obj * const proc_obj = (processing_obj *)obj;
 	form_json_priv_data *pdata;
