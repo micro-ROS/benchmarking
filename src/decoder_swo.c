@@ -79,7 +79,8 @@ static int packet_cb(struct libswo_context *ctx,
 	return true;
 }
 
-static int decoder_swo_data_in(processing_obj *obj, message_obj *msg)
+static size_t decoder_swo_data_in(processing_obj * const obj,
+				  message_obj * const msg)
 {
 	decoder_swo_obj *dec_swo = (decoder_swo_obj *) obj;
 	decoder_swo_priv_data *pdata =
@@ -105,7 +106,8 @@ static int decoder_swo_data_in(processing_obj *obj, message_obj *msg)
 	return 0;
 }
 
-static int decoder_swo_data_out(processing_obj *obj, message_obj *msg)
+static size_t decoder_swo_data_out(processing_obj * const obj,
+				   message_obj * const msg)
 {
 	decoder_swo_obj *dec_swo = (decoder_swo_obj *) obj;
 	decoder_swo_priv_data *pdata = (decoder_swo_priv_data *) dec_swo->pdata;
@@ -141,7 +143,7 @@ static int decoder_swo_free_instance(decoder_swo_priv_data *pdata)
 	return 0;
 }
 
-int decoder_swo_init(decoder_swo_obj *obj)
+int decoder_swo_init(decoder_swo_obj * const obj)
 {
 	processing_obj *proc_obj = (processing_obj *) obj;
 	decoder_swo_priv_data *pdata;
@@ -186,7 +188,7 @@ processing_init_failed:
 	return -1;
 }
 
-int decoder_swo_fini(decoder_swo_obj *obj)
+int decoder_swo_fini(decoder_swo_obj * const obj)
 {
 	processing_obj *proc_obj = (processing_obj *) obj;
 	decoder_swo_priv_data *pdata = (decoder_swo_priv_data *) obj->pdata;

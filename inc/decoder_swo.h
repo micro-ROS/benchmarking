@@ -11,7 +11,7 @@ struct decoder_swo_obj_st {
 	void		*pdata;
 };
 
-int decoder_swo_init(decoder_swo_obj *obj);
-int decoder_swo_fini(decoder_swo_obj *obj);
+int decoder_swo_init(decoder_swo_obj * const obj);
+int decoder_swo_fini(decoder_swo_obj * const obj);
 
 #endif /* __DECODER_SWO_H__ */
