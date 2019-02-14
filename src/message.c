@@ -27,8 +27,8 @@ typedef struct {
 static message_priv_data message_instances[MESSAGE_NSTANCES_CNT_MAX];
 
 
-/** 
- * \brief Default copy callback 
+/**
+ * \brief Default copy callback
  * */
 static size_t message_cpy_default(message_obj * restrict obj,
 			       message_obj * restrict src)
@@ -37,35 +37,35 @@ static size_t message_cpy_default(message_obj * restrict obj,
 	return -1;
 }
 
-/** 
- * \brief Default ptr callback 
+/**
+ * \brief Default ptr callback
  * */
-static char *message_ptr_default(message_obj * const obj)
+static char *message_ptr_default(const message_obj * const obj)
 {
 	WARNING("Message Object not initialized\n");
 	return NULL;
 }
 
-/** 
- * \brief Default length callback 
+/**
+ * \brief Default length callback
  * */
-static size_t message_length_default(message_obj * const obj)
+static size_t message_length_default(const message_obj * const obj)
 {
 	WARNING("Message Object not initialized\n");
 	return -1;
 }
 
-/** 
- * \brief Default size callback 
+/**
+ * \brief Default size callback
  * */
-static size_t message_totlen_default(message_obj * const obj)
+static size_t message_totlen_default(const message_obj * const obj)
 {
 	WARNING("Message Object not initialized\n");
 	return -1;
 }
 
-/** 
- * \brief Default write callback 
+/**
+ * \brief Default write callback
  * */
 static size_t message_write_default(message_obj * const obj,
 				 char * const buffer, size_t len)
@@ -74,11 +74,11 @@ static size_t message_write_default(message_obj * const obj,
 	return -1;
 }
 
-/** 
- * \brief Default read callback 
+/**
+ * \brief Default read callback
  * */
 static size_t message_read_default(message_obj * const obj,
-	       			  char ** const buffer)
+				  char * const buffer, size_t len)
 {
 	WARNING("Message Object not initialized\n");
 	return -1;
@@ -88,8 +88,8 @@ static size_t message_write_buffer(message_obj * const obj,
 				 char * const buffer, size_t len)
 {
 	message_priv_data *pdata = (message_priv_data *)obj->pdata;
-	size_t min = obj->totlen(obj) > len ? 
-					obj->totlen(obj) : len;
+	size_t min = obj->total_len(obj) > len ?
+					obj->total_len(obj) : len;
 
 	memcpy(obj->ptr(obj), buffer, min);
 	pdata->length = min;
@@ -97,29 +97,30 @@ static size_t message_write_buffer(message_obj * const obj,
 	return min;
 }
 
-static size_t message_read_buffer(message_obj * const obj, char * const buffer)
+static size_t message_read_buffer(message_obj * const obj, char * const buffer,
+				  size_t len)
 {
-	size_t min = obj->length(obj) > len ? 
-					obj->len(obj) : len;
+	size_t min = obj->length(obj) > len ?
+					obj->length(obj) : len;
 
 	memcpy(buffer, obj->ptr(obj), min);
 
 	return min;
 }
 
-static size_t message_length_buffer(message_obj * const obj)
+static size_t message_length_buffer(const message_obj * const obj)
 {
 	message_priv_data *pdata = (message_priv_data *)obj->pdata;
 	return pdata->length;
 }
 
-static size_t message_totlen_buffer(message_obj * const obj)
+static size_t message_totlen_buffer(const message_obj * const obj)
 {
 	message_priv_data *pdata = (message_priv_data *)obj->pdata;
 	return pdata->total_len;
 }
 
-static char *message_ptr_buffer(message_obj * const obj)
+static char *message_ptr_buffer(const message_obj * const obj)
 {
 	message_priv_data *pdata = (message_priv_data *)obj->pdata;
 	return pdata->buffer;
@@ -128,7 +129,7 @@ static char *message_ptr_buffer(message_obj * const obj)
 /**
  * \brief Copy a message from src into obj. If obj's total_len is lower
  *  		than the the total_len of src, then only the total_len's obj
- * 		is copied. 
+ * 		is copied.
  */
 static size_t message_cpy_buffer(message_obj * const obj,
 			       message_obj * const src)
@@ -175,19 +176,19 @@ int message_init(message_obj * const obj)
 	}
 
 	if (message_internal_init(pdata)){
-		goto internal_init_failed;	
+		goto internal_init_failed;
 	}
 
 	obj->pdata = (void *) pdata;
 	/** For now we use buffer only */
 	obj->read = message_read_buffer;
-	obj->write = message_write_buffer; 
+	obj->write = message_write_buffer;
 	obj->length = message_length_buffer;
 	obj->total_len = message_totlen_buffer;
 	obj->cpy = message_cpy_buffer;
 	obj->ptr = message_ptr_buffer;
 
-	
+
 	return 0;
 internal_init_failed:
 no_free_instance:
@@ -209,7 +210,7 @@ int message_fini(message_obj * const obj)
 	}
 
 	obj->read = message_read_default;
-	obj->write = message_write_default; 
+	obj->write = message_write_default;
 	obj->length = message_length_default;
 	obj->total_len = message_totlen_default;
 	obj->cpy = message_cpy_default;
