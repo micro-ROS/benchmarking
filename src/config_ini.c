@@ -7,7 +7,7 @@
 
 typedef struct {
 	ini_t *ini_cfg;
-	const message_obj *path_cfg;
+	const char * path_cfg;
 	bool is_init;
 	bool is_cfg_init;
 } config_ini_priv_data;
@@ -55,7 +55,7 @@ static int config_ini_set_value(config_obj * const obj,
 }
 
 static int config_ini_open_config(config_ini_obj * const obj,
-				  const message_obj * msg)
+				  const char * msg)
 {
 	config_ini_priv_data *pdata = (config_ini_priv_data *)obj->pdata;
 
@@ -70,10 +70,10 @@ static int config_ini_open_config(config_ini_obj * const obj,
 	}
 
 	pdata->path_cfg = msg;
-	pdata->ini_cfg = ini_load(msg->ptr(msg));
+	pdata->ini_cfg = ini_load(msg);
 
 	if (!pdata->ini_cfg) {
-		ERROR("Could not open cfg file %s", msg->ptr(msg));
+		ERROR("Could not open cfg file %s\n", msg);
 		return -1;
 	}
 
