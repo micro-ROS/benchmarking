@@ -75,9 +75,14 @@ do
 		continue
 	fi
 
+	autotoolize_cmd=$(eval echo \$"${filename}_need_autotoolize")
+	if [ $autotoolize_cmd -eq 1 ]; then
+		autotoolize_src_files=$(eval echo \$"${filename}_source_files")
+		./autotoolize $git_src_dir ${filename} ${autotoolize_src_files}
+	fi
+
 	cd $git_src_dir
 	eval $build_cmd
-
 	if [ $? -ne 0 ]; then
 	       printf "${RED} ${file}: ${filename}_build_cmd did not succeed${RESET}\n"
 	       exit 255
