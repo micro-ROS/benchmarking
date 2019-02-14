@@ -41,13 +41,13 @@ typedef enum {
 
 typedef struct {
 	/** Not in use currently might be in the future */
-	char * const parent_section;
+	const char * parent_section;
 
 	/** Name of the section where to look for the param */
-	char * const section;
+	const char * section;
 
 	/** Name of the parameter to get the value from*/
-	char * const name;
+	const char * name;
 
 	/** Type of parameter */
 	config_type_value type;

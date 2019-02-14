@@ -7,7 +7,7 @@
 typedef struct config_ini_obj_st config_ini_obj;
 
 typedef int (*config_ini_open_cfg_cb)(config_ini_obj * const obj,
-				      const message_obj *msg);
+				      const char * const msg);
 
 struct config_ini_obj_st {
 	config_obj cfg_obj;
