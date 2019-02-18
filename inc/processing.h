@@ -9,7 +9,10 @@ typedef size_t (*processing_data_in_cb	) (processing_obj * const obj, message_ob
 typedef size_t (*processing_data_out_cb	) (processing_obj * const obj, message_obj * const msg);
 
 struct processing_obj_st {
+	/** Callback to register to receive data */
 	processing_data_in_cb 		data_in;
+
+	/** Callback to register to receive data */
 	processing_data_out_cb 		data_out;
 };
 
