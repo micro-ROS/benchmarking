@@ -17,7 +17,8 @@ static config_ini_priv_data ci_pdata;
 static cfg_param * const  config_ini_get_value(config_obj * const obj,
 					       cfg_param * const param)
 {
-	config_ini_priv_data *pdata = (config_ini_priv_data *)obj->pdata;
+	config_ini_obj *cfg_ini_obj  = (config_ini_obj *)obj;
+	config_ini_priv_data *pdata = (config_ini_priv_data *)cfg_ini_obj->pdata;
 	ini_t *cfg = pdata->ini_cfg;
 
 	if (!pdata->is_cfg_init) {
@@ -91,13 +92,12 @@ int config_ini_init(config_ini_obj * const obj)
 	}
 
 	obj->pdata = (void *) pdata;
-
 	obj->open_cfg = config_ini_open_config;
+
 	cfg_obj->get_value = config_ini_get_value;
 	cfg_obj->set_value = config_ini_set_value;
 
 	pdata->is_init = true;
-
 	return 0;
 }
 
