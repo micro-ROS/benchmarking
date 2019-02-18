@@ -89,13 +89,13 @@ static int pipeline_stream_data(pipeline_obj * const obj)
 	}
 
 	for (unsigned int i=0; i<(pdata->count-1); i++) {
-		DEBUG("Data incoming from element\n");
+		DEBUG("Data incoming from element %d\n", i);
 		if (pdata->proc_objs[i]->data_out(pdata->proc_objs[i], msg) < 0) {
 			rc = -1;
 			break;
 		}
 
-		DEBUG("Data passed to the next element\n");
+		DEBUG("Data passed to the next element %d\n", i);
 		if (pdata->proc_objs[i+1]->data_in(pdata->proc_objs[i+1], msg) < 0) {
 			rc = -1;
 			break;
