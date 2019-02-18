@@ -38,28 +38,28 @@ struct packet_type_info {
 
 /* Data getter */
 /* HW info */
-static inline void handle_hw_pkt_address(const union libswo_packet *pkt, 
+static inline void handle_hw_pkt_address(const union libswo_packet *pkt,
 					 void *data)
 {
 	unsigned int *data_u = (unsigned int *) data;
 	*data_u = (unsigned int) pkt->hw.address;
 }
 
-static inline void handle_hw_pkt_value(const union libswo_packet *pkt, 
+static inline void handle_hw_pkt_value(const union libswo_packet *pkt,
 					 void *data)
 {
 	unsigned int *data_u = (unsigned int *) data;
 	*data_u = (unsigned int) pkt->hw.value;
 }
 
-static inline void handle_hw_pkt_hw_value(const union libswo_packet *pkt, 
+static inline void handle_hw_pkt_hw_value(const union libswo_packet *pkt,
 					 void *data)
 {
 	char *data_c = (char *) data;
 	*data_c =  (char) pkt->hw.value;
 }
 
-static inline void handle_hw_pkt_size(const union libswo_packet *pkt, 
+static inline void handle_hw_pkt_size(const union libswo_packet *pkt,
 				      void *data)
 {
 	size_t *data_sz = (size_t *) data;
@@ -99,17 +99,19 @@ static inline void handle_instrumentation_pkt_size
 static inline void handle_extension_pkt_extension
 		(const union libswo_packet *pkt, void *data)
 {
-	char *src = (char *) data;
+	char **src = (char **) data;
+
 	switch (pkt->ext.source) {
 		case LIBSWO_EXT_SRC_ITM:
-			src = "ITM";
+			*src = "ITM";
 			break;
 		case LIBSWO_EXT_SRC_HW:
-			src = "HW";
+			*src = "HW";
 			break;
 		default:
-			WARNING("Extension pkt with invalid source: %u.",
+			WARNING("Extension pkt with invalid source: %u\n",
 				pkt->ext.source);
+			*src = "No specific ext";
 			return;
 		}
 }
@@ -137,24 +139,25 @@ static inline void handle_local_timestamp_pkt_relation(
 	const union libswo_packet *pkt,
 	void *data)
 {
-	char *tc = (char *) data;
+	char **tc = (char **) data;
 
 	switch (pkt->lts.relation) {
 	case LIBSWO_LTS_REL_SYNC:
-		tc = "synchronous";
+		*tc = "synchronous";
 		break;
 	case LIBSWO_LTS_REL_TS:
-		tc = "timestamp delayed";
+		*tc = "timestamp delayed";
 		break;
 	case LIBSWO_LTS_REL_SRC:
-		tc = "data delayed";
+		*tc = "data delayed";
 		break;
 	case LIBSWO_LTS_REL_BOTH:
-		tc = "data and timestamp delayed";
+		*tc = "data and timestamp delayed";
 		break;
 	default:
 		WARNING("Local timestamp packet with invalid relation: %u.",
 			pkt->lts.relation);
+		*tc = "unknown timestamp";
 		return;
 	}
 }
@@ -198,35 +201,35 @@ static inline void handle_gts_two_pkt_value(const union libswo_packet *pkt,
 }
 
 /* DWT event cnt */
-static inline void handle_evt_pkt_cpi(const union libswo_packet *pkt, 
+static inline void handle_evt_pkt_cpi(const union libswo_packet *pkt,
 					 void *data)
 {
 	unsigned int *data_u = (unsigned int *) data;
 	*data_u = (unsigned int) pkt->evtcnt.cpi;
 }
 
-static inline void handle_evt_pkt_exc(const union libswo_packet *pkt, 
+static inline void handle_evt_pkt_exc(const union libswo_packet *pkt,
 					 void *data)
 {
 	unsigned int *data_u = (unsigned int *) data;
 	*data_u = (unsigned int) pkt->evtcnt.exc;
 }
 
-static inline void handle_evt_pkt_sleep(const union libswo_packet *pkt, 
+static inline void handle_evt_pkt_sleep(const union libswo_packet *pkt,
 					 void *data)
 {
 	unsigned int *data_u = (unsigned int *) data;
 	*data_u = (unsigned int) pkt->evtcnt.sleep;
 }
 
-static inline void handle_evt_pkt_LSU(const union libswo_packet *pkt, 
+static inline void handle_evt_pkt_LSU(const union libswo_packet *pkt,
 					 void *data)
 {
 	unsigned int *data_u = (unsigned int *) data;
 	*data_u = (unsigned int) pkt->evtcnt.lsu;
 }
 
-static inline void handle_evt_pkt_fold(const union libswo_packet *pkt, 
+static inline void handle_evt_pkt_fold(const union libswo_packet *pkt,
 					 void *data)
 {
 	unsigned int *data_u = (unsigned int *) data;
@@ -268,20 +271,20 @@ static const char *exception_names[] = {
 static inline void handle_exctrc_pkt_function(const union libswo_packet *pkt,
 					      void *data)
 {
-	const char *func = data;
+	char **func = (char **) data;
 
 	switch (pkt->exctrc.function) {
 	case LIBSWO_EXCTRC_FUNC_ENTER:
-		func = "enter";
+		*func = "enter";
 		break;
 	case LIBSWO_EXCTRC_FUNC_EXIT:
-		func = "exit";
+		*func = "exit";
 		break;
 	case LIBSWO_EXCTRC_FUNC_RETURN:
-		func = "return";
+		*func = "return";
 		break;
 	default:
-		func = "reserved";
+		*func = "reserved";
 	}
 }
 
@@ -290,16 +293,16 @@ static inline void handle_exctrc_pkt_exception(const union libswo_packet *pkt,
 {
 	static char buf[32];
 	unsigned short exception;
-	const char *name = data;
+	const char **name = (const char **) data;
 
 	exception = pkt->exctrc.exception;
 	/*TODO adapting CONCUSION */
 	if (exception < NUM_EXCEPTION_NAMES) {
-		name = exception_names[exception];
+		*name = exception_names[exception];
 	} else {
 		snprintf(buf, sizeof(buf) - 1, "External interrupt %lu",
 			exception - NUM_EXCEPTION_NAMES);
-		name = buf;
+		*name = buf;
 	}
 }
 
@@ -375,7 +378,7 @@ static inline void handle_data_value_pkt_size(const union libswo_packet *pkt,
 #define PKT_VALUE_HELPER(kind, nameval, typ) \
 	{ .name = #nameval, .type = typ, \
 		.handle_pkt = STRINGIFY(STRINGIFY(handle_, kind), STRINGIFY(_pkt_, nameval)) \
-	} 
+	}
 
 static struct packet_type_info ptis[] = {
 	[LIBSWO_PACKET_TYPE_UNKNOWN] = {
@@ -509,10 +512,19 @@ static size_t pkt_write_to_cjson(pkt_to_form * const ptf,
 	cJSON *json_value;
 	size_t json_sz, total_sz = 0;
 	unsigned int json_nbr;
-	char *json_str;
+	char *json_str = NULL;
+
+	if (!pti->name) {
+		return 0;
+	}
 
 	if (!(json_root = cJSON_AddObjectToObject(ptf->root, pti->name))) {
 		ERROR("Creating Node root node packet\n");
+		return -1;
+	}
+
+	if (!cJSON_AddStringToObject(json_root, "packet", pti->name)) {
+		ERROR("Could not set not packet name\n");
 		return -1;
 	}
 
@@ -527,7 +539,7 @@ static size_t pkt_write_to_cjson(pkt_to_form * const ptf,
 					cJSON_CreateString(json_char);
 			break;
 			case PKT_TYPE_STR:
-				pvi->handle_pkt(pkt, json_str);
+				pvi->handle_pkt(pkt, &json_str);
 				json_value =
 					cJSON_CreateString(json_str);
 			break;
@@ -542,7 +554,7 @@ static size_t pkt_write_to_cjson(pkt_to_form * const ptf,
 					cJSON_CreateNumber((float) json_nbr);
 			break;
 			case PKT_TYPE_HEX:
-				/** 
+				/**
 				 * Hex are handled a unsigned in and then as
 				 * printed out as string to keep the format
 				 * 0xabcdef01
@@ -560,7 +572,7 @@ static size_t pkt_write_to_cjson(pkt_to_form * const ptf,
 		}
 
 		if (!json_value) {
-			ERROR("Error while creating json element %s\n", 
+			ERROR("Error while creating json element %s\n",
 			      pti->name);
 			return -1;
 		}
@@ -574,22 +586,32 @@ static size_t pkt_write_to_cjson(pkt_to_form * const ptf,
 
 size_t pkt_convert(pkt_to_form * const ptf, message_obj * const obj)
 {
-	union libswo_packet *packet = (union libswo_packet *) obj->ptr(obj);
+	union libswo_packet *packets = (union libswo_packet *) obj->ptr(obj);
+	unsigned int pkt_count = obj->length(obj) / sizeof (union libswo_packet);
 
-	if ((ptf->fmt > PKT_CONVERTER_MYSQL) ||
-	    (ptf->fmt < PKT_CONVERTER_CJSON)) {
-		ERROR("Invalid type of output conversion\n");
-		return -1;
+
+	if (!pkt_count) {
+		WARNING("Buffer underflow\n");
 	}
 
-	switch (ptf->fmt) {
-	case PKT_CONVERTER_CJSON:
-		return pkt_write_to_cjson(ptf, packet);
-	break;
-	default:	
-		WARNING("Type not implemented\n");
-	break;
+	for (unsigned int i = 0; i < pkt_count; i++) {
+		if ((ptf->fmt > PKT_CONVERTER_MYSQL) ||
+		    (ptf->fmt < PKT_CONVERTER_CJSON)) {
+			ERROR("Invalid type of output conversion\n");
+			return -1;
+		}
+
+		switch (ptf->fmt) {
+		case PKT_CONVERTER_CJSON:
+			if (pkt_write_to_cjson(ptf, &packets[i])) {
+				return -1;
+			}
+		break;
+		default:
+			WARNING("Type not implemented\n");
+		break;
+		}
 	}
 
-	return -1;
+	return 0;
 }
