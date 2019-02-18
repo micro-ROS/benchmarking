@@ -1,13 +1,15 @@
 #include <decoder_swo.h>
-
 #include <common-macros.h>
 #include <debug.h>
 
-#include <stdbool.h>
 #include <libswo/libswo.h>
+
+#include <stdbool.h>
+#include <string.h>
 
 typedef struct {
 	struct libswo_context *swo_ctx;
+	unsigned int packet_decoded;
 	bool is_used;
 	message_obj msg;
 } decoder_swo_priv_data;
@@ -15,11 +17,15 @@ typedef struct {
 
 static decoder_swo_priv_data decoder_swo_pdata;
 
-static void default_packet_handler(const union libswo_packet *packet, 
+static union libswo_packet packets_decoded[1024 / sizeof(union libswo_packet)];
+static unsigned int packet_decoded = 0;
+
+static void default_packet_handler(const union libswo_packet *packet,
 				   unsigned int c, const char *s)
 {
-	DEBUG("Message %d, %s \n", c, s);
+	//DEBUG("Message %d, %s \n", c, s);
 }
+
 
 #define str(s)	#s
 #define set_handler(pkt_type, handler) 		\
@@ -64,7 +70,7 @@ static int packet_cb(struct libswo_context *ctx,
 		return TRUE;
 #endif
 	if (((packet->type < LIBSWO_PACKET_TYPE_UNKNOWN) ||
-		(packet->type > LIBSWO_PACKET_TYPE_HW)) && 
+		(packet->type > LIBSWO_PACKET_TYPE_HW)) &&
 		((packet->type < LIBSWO_PACKET_TYPE_DWT_EVTCNT) ||
 		(packet->type > LIBSWO_PACKET_TYPE_DWT_DATA_VALUE))) {
 
@@ -75,6 +81,9 @@ static int packet_cb(struct libswo_context *ctx,
 	count = default_handlers[packet->type].count;
 	name = default_handlers[packet->type].name;
 	default_handlers[packet->type].pkt_cb(packet, count, name);
+
+	memcpy(&packets_decoded[packet_decoded], packet, sizeof(*packet));
+	packet_decoded++;
 
 	return true;
 }
@@ -98,7 +107,7 @@ static size_t decoder_swo_data_in(processing_obj * const obj,
 
 	ret = libswo_decode(pdata->swo_ctx, 0);
 	if (ret) {
-		ERROR("Error while getting decoding data\n");
+		ERROR("Error while decoding data\n");
 		ERROR("%s", libswo_strerror_name(ret));
 		return -1;
 	}
@@ -113,17 +122,20 @@ static size_t decoder_swo_data_out(processing_obj * const obj,
 	decoder_swo_priv_data *pdata = (decoder_swo_priv_data *) dec_swo->pdata;
 	message_obj *msg_internal = &pdata->msg;
 
-	size_t len = msg->length(msg);
-	char *data = msg->ptr(msg);
 
+	memset(msg->ptr(msg), 0, msg->total_len(msg));
+	msg->write(msg, (void *) packets_decoded,
+	       packet_decoded * sizeof (union libswo_packet));
+#if 0
 	for (unsigned int i=0; i<len; i++) {
 		DEBUG("data %d, %02x\n", i, data[i]);
 	}
-		
+#endif
+	packet_decoded = 0;
 	return 0;
 }
 
-static decoder_swo_priv_data *decoder_swo_get_free_instance()
+static decoder_swo_priv_data *decoder_swo_get_free_instance(void)
 {
 	if (decoder_swo_pdata.is_used) {
 		return NULL;
@@ -160,7 +172,7 @@ int decoder_swo_init(decoder_swo_obj * const obj)
 	obj->pdata = pdata;
 
 	if (message_init(&pdata->msg)) {
-		goto message_init_failed; 
+		goto message_init_failed;
 	}
 
 	msg = &pdata->msg;
@@ -168,7 +180,7 @@ int decoder_swo_init(decoder_swo_obj * const obj)
 	proc_obj->data_in  = decoder_swo_data_in;
 	proc_obj->data_out = decoder_swo_data_out;
 
-	if (libswo_init(&pdata->swo_ctx, NULL, 
+	if (libswo_init(&pdata->swo_ctx, NULL,
 			(size_t) (2U * msg->total_len(msg))) != LIBSWO_OK) {
 		goto libswo_init_failed;
 	}
@@ -176,6 +188,8 @@ int decoder_swo_init(decoder_swo_obj * const obj)
 	if (libswo_set_callback(pdata->swo_ctx, packet_cb, NULL)) {
 		goto libswo_set_callback_failed;
 	}
+
+	libswo_log_set_level(pdata->swo_ctx, LIBSWO_LOG_LEVEL_NONE);
 
 	return 0;
 libswo_set_callback_failed:
