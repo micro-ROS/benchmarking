@@ -34,7 +34,6 @@ static int config_default_set_value(config_obj * const obj,
 	return -1;
 }
 
-
 int config_init(config_obj * const obj)
 {
 	config_priv_data *pdata = &cfg_pdata;
@@ -46,6 +45,7 @@ int config_init(config_obj * const obj)
 
 	obj->pdata = (void *) pdata;
 	pdata->is_init = true;
+	pdata->obj_parent = obj;
 
 	return 0;
 }
