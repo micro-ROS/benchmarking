@@ -12,10 +12,10 @@
 #include <sys/stat.h>
 
 /** Default wronly flags: truncate, create if not exists, write only */
-#define FILE_DEFAULT_WR_FLAGS 	(O_CREAT | O_TRUNC | O_WRONLY)
+#define FILE_DEFAULT_WR_FLAGS 	( O_CREAT | O_TRUNC | O_RDWR)
 
 /** Default wronly acces mode: user can read and write */
-#define FILE_DEFAULT_WR_AC_MODE (S_IRUSR | S_IWUSR)
+#define FILE_DEFAULT_WR_AC_MODE (S_IRUSR | S_IWUSR | S_IWGRP | S_IRGRP | S_IWOTH | S_IROTH )
 
 /** Default read flags: only read */
 #define FILE_DEFAULT_RD_FLAGS (O_RDONLY)
@@ -84,7 +84,6 @@ static int file_set_path(file_obj * const obj, const char * const path,
 
 	strncpy(pdata->file_path, path, sizeof(pdata->file_path) - 1);
 	pdata->mode = mode;
-	pdata->is_open = true;
 
 	return 0;
 }
@@ -106,22 +105,25 @@ static int file_open(file_obj * const obj)
 	}
 
 	switch (pdata->mode) {
-	case FILE_RDONLY:
+	case FILE_WRONLY:
 		rc = open(pdata->file_path, FILE_DEFAULT_WR_FLAGS,
 			  FILE_DEFAULT_WR_AC_MODE);
 	break;
-	case FILE_WRONLY:
-		rc = open(pdata->file_path, FILE_DEFAULT_WR_FLAGS);
+	case FILE_RDONLY:
+		rc = open(pdata->file_path, FILE_DEFAULT_RD_FLAGS);
 	break;
 	default:
 		ERROR("Not handled open mode\n");
 		return -1;
 	}
 
-	if (rc)
+	if (rc < 0) {
 		ERROR("While opening file %s\n", strerror(errno));
-	else 
-		pdata->is_open = true;
+		return -1;
+	} 
+
+	pdata->is_open = true;
+	pdata->fd = rc;
 
 	return 0;
 }
@@ -156,8 +158,11 @@ static size_t file_write(processing_obj * const obj, message_obj * const msg)
 
 	while ((n = write(pdata->fd, &buf[readd], length - readd) >= 0)) {
 		readd += n;
+		if (readd == n) 
+			break;
 	}
-
+	
+	fsync(pdata->fd);
 	return readd;
 }
 
@@ -174,13 +179,12 @@ int file_init(file_obj * const obj)
 	obj->file_fini = file_close;
 	obj->file_set_path = file_set_path;
 
-
 	if (processing_init(proc_obj)) {
 		goto processing_init_failed;
 	}
 
 	proc_obj->data_in = file_write;
-	/** TODO File read */
+	/** TODO File read for now leave the normal one */
 
 	return 0;
 processing_init_failed:
@@ -188,7 +192,6 @@ free_instance_failed:
 	file_free_instance(obj);
 	return -1;
 }
-
 
 int file_clean(file_obj * const obj)
 {
