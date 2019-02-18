@@ -45,7 +45,7 @@ typedef enum {
 
 
 typedef enum {
-	/* So we are able to write any information to cpu over the SWD 
+	/* So we are able to write any information to cpu over the SWD
 	 * protocol  not implemented */
 	NO_SWD,
 	STLINKV2_SWD,
@@ -60,7 +60,7 @@ typedef enum {
 
 static struct {
 	SWO_link swo;
-	SWD_link swd;	
+	SWD_link swd;
 	ui_disp	 ui;
 } app_cfg = {
 	.swo = UART_SWO,
@@ -93,18 +93,19 @@ void decoder_init_config(config_ini_obj *cfg)
 void decoder_init_uart(uart_obj *uart)
 {
 	cfg_param uart_cfg = {
-		.section = "SWO_UART",
+		.section = "uart-swo",
 	};
 
 	DEBUG("initializing uart...\n");
 
-	memset(&uart, 0, sizeof(*uart));
+	memset(uart, 0, sizeof(*uart));
 	if (uart_init(uart)) {
 		exit(EXIT_FAILURE);
 	}
 
-	uart_cfg.section = "device";
+	uart_cfg.name = "device";
 	uart_cfg.type = CONFIG_STR;
+	DEBUG("\t-device used: %s\n", CONFIG_HELPER_GET_STR(&uart_cfg));
 	if (uart->uart_set_dev(uart,
 				  CONFIG_HELPER_GET_STR(&uart_cfg))) {
 		exit(EXIT_FAILURE);
@@ -114,8 +115,9 @@ void decoder_init_uart(uart_obj *uart)
 		exit(EXIT_FAILURE);
 	}
 
-	uart_cfg.section = "baudrate";
+	uart_cfg.name = "baudrate";
 	uart_cfg.type = CONFIG_UNSIGNED_INT;
+	DEBUG("\t-baudrate used: %u\n", CONFIG_HELPER_GET_U32(&uart_cfg));
 	if (uart->uart_set_baudrate(uart,
 				       CONFIG_HELPER_GET_U32(&uart_cfg))) {
 		exit(EXIT_FAILURE);
@@ -127,7 +129,7 @@ void decoder_init_uart(uart_obj *uart)
 void decoder_init_form_cjson(form_obj *form)
 {
 	DEBUG("initializing cjson form...\n");
-	
+
 	if (form_cjson_init(form)) {
 		exit(EXIT_FAILURE);
 	}
@@ -139,6 +141,7 @@ void decoder_init_decoder_swo(decoder_swo_obj *dec)
 {
 	DEBUG("initializing decoder swo...\n");
 
+	memset(dec, 0, sizeof(*dec));
 	if (decoder_swo_init(dec)) {
 		exit(EXIT_FAILURE);
 	}
@@ -146,33 +149,38 @@ void decoder_init_decoder_swo(decoder_swo_obj *dec)
 	DEBUG("decoder swo initialized...\n");
 }
 
-int decoder_init_file_sink(file_obj *file)
+int decoder_init_file_sink(file_obj *file_f)
 {
 	cfg_param file_cfg = {
-		.section = "OUTPUT_FILE",
+		.section = "output-file",
 	};
+
 	DEBUG("initializing file sink...\n");
 
-	if (file_init(file)) {
+	memset(file_f, 0, sizeof(*file_f));
+	if (file_init(file_f)) {
 		exit(EXIT_FAILURE);
 	}
 
-	file_cfg.section = "path";
+	file_cfg.name = "path";
 	file_cfg.type = CONFIG_STR;
-	if (file->file_set_path(file,
+	if (file_f->file_set_path(file_f,
 				CONFIG_HELPER_GET_STR(&file_cfg),
 			        FILE_WRONLY)) {
 		exit(EXIT_FAILURE);
 	}
 
-	DEBUG("ile sink initialized.\n");
+	if (file_f->file_init(file_f)) {
+		exit(EXIT_FAILURE);
+	}
+
+	DEBUG("file sink initialized.\n");
 	return 0;
 }
 
 int main(int argc, char **argv)
 
 {
-	int option_index = 0;
 	config_ini_obj	cfgini;
 	uart_obj	uart_src;
 	form_obj	cjson_proc;
@@ -180,6 +188,8 @@ int main(int argc, char **argv)
 	file_obj 	file_sink;
 
 	pipeline_obj	pipeline;
+
+	int option_index = 0;
 
 	decoder_init_config(&cfgini);
 
