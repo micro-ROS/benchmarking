@@ -8,7 +8,7 @@
 /** This is */
 #define MESSAGE_NSTANCES_CNT_MAX	32
 /** This is */
-#define MESSAGE_BUFFER_SZ_MAX		1024
+#define MESSAGE_BUFFER_SZ_MAX		4096
 
 #endif
 
@@ -24,7 +24,9 @@
 #define FILE_COUNT_MAX			16
 
 /** Max number of uart device that can be openned */
-#define UART_COUNT_MAX			1
+#define UART_DEV_COUNT_MAX		1
+
+#define UART_COUNT_MAX			STRING_MAX_LENGTH
 
 
 /** This configuration will be taken either from a .INI file like
