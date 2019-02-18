@@ -73,7 +73,7 @@ typedef struct  {
 	/** Manage multi thread concurency */
 } uart_private_data;
 
-static uart_private_data uarts_instances[UART_COUNT_MAX] = {0};
+static uart_private_data uarts_instances[UART_DEV_COUNT_MAX] = {0};
 
 static int uart_get_instance(uart_obj * const uart)
 {
@@ -141,8 +141,8 @@ static int uart_open(uart_obj * const uart)
 
 	uartpd->fd = open(uartpd->dev_path, O_RDONLY);
 	if (uartpd->fd < 0) {
-		ERROR("Device %s error while opening: \n",
-		      uartpd->dev_path);
+		ERROR("Device %s error while opening: %s\n",
+		      uartpd->dev_path, strerror(errno));
 		return -1;
 	}
 	uartpd->is_open = 1;
