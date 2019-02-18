@@ -7,6 +7,8 @@
 #include <cJSON.h>
 
 #include <stdbool.h>
+#include <string.h>
+#include <unistd.h>
 
 
 typedef struct {
@@ -56,37 +58,105 @@ static json_config form_json_cfgs[] = {
 	JSON_CONFIG_INIT("session", "date", CONFIG_STR, session_info),
 	JSON_CONFIG_INIT("session", "type", CONFIG_STR, session_info),
 
-	JSON_CONFIG_INIT("board_info", "name", CONFIG_STR, board_info),
-	JSON_CONFIG_INIT("board_info", "cpu", CONFIG_STR, board_info),
-	JSON_CONFIG_INIT("board_info", "cpu", CONFIG_STR, board_info),
-	JSON_CONFIG_INIT("board_info", "cortex", CONFIG_STR, board_info),
-	JSON_CONFIG_INIT("board_info", "hardware_module", CONFIG_STR, board_info),
+	JSON_CONFIG_INIT("board-info", "name", CONFIG_STR, board_info),
+	JSON_CONFIG_INIT("board-info", "cpu", CONFIG_STR, board_info),
+	JSON_CONFIG_INIT("board-info", "cortex", CONFIG_STR, board_info),
+	JSON_CONFIG_INIT("board-info", "hardware_module", CONFIG_STR, board_info),
 
-	JSON_CONFIG_INIT("soft_info", "name", CONFIG_STR, soft_info),
-	JSON_CONFIG_INIT("soft_info", "version_nuttx", CONFIG_STR, soft_info),
-	JSON_CONFIG_INIT("soft_info", "commitid_nuttx", CONFIG_STR, soft_info),
-	JSON_CONFIG_INIT("soft_info", "config_nuttx", CONFIG_STR, soft_info),
-	JSON_CONFIG_INIT("soft_info", "version_nuttx", CONFIG_STR, soft_info),
-	JSON_CONFIG_INIT("soft_info", "commitid_nuttx", CONFIG_STR, soft_info),
-	JSON_CONFIG_INIT("soft_info", "config_nuttx", CONFIG_STR, soft_info),
+	JSON_CONFIG_INIT("soft-info", "name", CONFIG_STR, soft_info),
+	JSON_CONFIG_INIT("soft-info", "version_nuttx", CONFIG_STR, soft_info),
+	JSON_CONFIG_INIT("soft-info", "commit-id_nuttx", CONFIG_STR, soft_info),
+	JSON_CONFIG_INIT("soft-info", "config_nuttx", CONFIG_STR, soft_info),
 };
+
+static void form_json_format_init_output(message_obj * const msg)
+{
+	char *brace = strrchr(msg->ptr(msg), ']');
+	char *end = strrchr(msg->ptr(msg), '}');
+
+
+	brace[0] = ',';
+	brace[1] = '\n';
+	msg->set_length(msg, msg->length(msg) - ((uintptr_t) end - (uintptr_t)brace));
+}
+
+static void form_json_format_child_output(message_obj * const msg)
+{
+	char *brace, *lf, *old_lf;
+	unsigned int shifts = 0, written = 0;
+	char temp[MESSAGE_BUFFER_SZ_MAX];
+
+	memcpy(temp, msg->ptr(msg), msg->length(msg));
+	lf = strtok(temp, "\n");
+	while (lf) {
+		written += snprintf(&msg->ptr(msg)[written], msg->total_len(msg) - written,
+				    "\t\t%s\n", lf);
+		lf = strtok(NULL, "\n");
+	}
+
+	msg->ptr(msg)[written - 1] = ',';
+	msg->ptr(msg)[written] = '\n';
+	msg->set_length(msg, written + 1);
+}
+
+static size_t form_json_print_nodes(cJSON *pnode, message_obj * const msg)
+{
+
+	size_t rc = -1;
+	char *data = NULL;
+
+	data = cJSON_Print(pnode);
+
+	if (!data) {
+		ERROR("could not print to json\n");
+		return -1;
+	}
+
+	if ((rc = strnlen(data, msg->total_len(msg) * 2)) > msg->total_len(msg)) {
+		ERROR("Data to write is bigger than the msg's buffer, "
+		      "%ld/%ld\n", rc, msg->total_len(msg));
+		goto buffer_failed;
+	}
+
+	msg->write(msg, data, rc + 1);
+	/* DEBUG ("json:%s\n", msg->ptr(msg));*/
+	rc = msg->length(msg);
+buffer_failed:
+	free(data);
+	return rc;
+
+}
 
 static size_t form_json_send_data(processing_obj * const obj,
 				  message_obj * const msg)
 {
-	size_t rc = -1;
 	form_json_priv_data *jpdata = (form_json_priv_data *)
 						((form_obj *) obj)->pdata;
+	cJSON *node;
+	int rc=0, err;
+
+	/* TODO clean this function */
 	if (!jpdata->is_nfirstrun) {
-		rc = cJSON_PrintPreallocated(jpdata->root_benchmarking,
-				       msg->ptr(msg), msg->length(msg), true);
+		node = jpdata->root_benchmarking;
+		rc = form_json_print_nodes(node, msg);
 		jpdata->is_nfirstrun = 1;
+		form_json_format_init_output(msg);
 	} else {
-		rc = cJSON_PrintPreallocated(jpdata->ptf->root->child,
-				       msg->ptr(msg), msg->length(msg), true);
+		node = jpdata->ptf->root->child;
+		while (node) {
+			if ( err = form_json_print_nodes(node, msg) < 0) {
+				return -1;
+			}
+
+			form_json_format_child_output(msg);
+
+			rc += err;
+			node = node->next;
+		}
 	}
 
 	cJSON_Delete(jpdata->ptf->root->child);
+	jpdata->ptf->root->child = NULL;
 	return rc;
 }
 
@@ -95,6 +165,8 @@ static size_t form_json_receive_data(processing_obj * const obj,
 {
 	form_json_priv_data *jpdata = (form_json_priv_data *)
 						((form_obj *) obj)->pdata;
+	jpdata->ptf->root = jpdata->packets;
+
 	return pkt_convert(jpdata->ptf, msg);
 }
 
@@ -177,22 +249,31 @@ static int form_json_init_session(form_obj * const obj)
 	form_json_priv_data *pdata = (form_json_priv_data *) obj->pdata;
 	json_config *json_cfgs = pdata->json_cfgs;
 
-	for (unsigned int i=0; i < ARRAY_SIZE(json_cfgs); i++) {
-		if (form_json_init_nodes(obj)) {
-			return -1;
-		}
+	/* create root nodes 8 */
+	pdata->session_info = cJSON_AddObjectToObject(pdata->root_benchmarking, "session");
+	if (!pdata->session_info)
+		return -1;
+
+	pdata->board_info =  cJSON_AddObjectToObject(pdata->root_benchmarking, "board_info");
+	if (!pdata->board_info)
+		return -1;
+
+	pdata->soft_info =  cJSON_AddObjectToObject(pdata->root_benchmarking, "soft_info");
+	if (!pdata->soft_info)
+		return -1;
+
+	pdata->session_info =  cJSON_AddObjectToObject(pdata->root_benchmarking, "session_info");
+	if (!pdata->session_info)
+		return -1;
+
+	if (form_json_init_nodes(obj)) {
+		return -1;
 	}
 
 	return 0;
 }
 
 int form_cjson_init(form_obj * const obj)
-{
-	DEBUG("To Be implemented\n");
-	return 0;
-}
-
-int form_cjson_fini(form_obj * const obj)
 {
 	processing_obj * const proc_obj = (processing_obj *)obj;
 	form_json_priv_data *pdata;
@@ -239,4 +320,10 @@ json_failed:
 no_free_instance:
 	processing_fini((processing_obj *) obj);
 	return -1;
+}
+
+int form_cjson_fini(form_obj * const obj)
+{
+	DEBUG("To Be implemented\n");
+	return 0;
 }
