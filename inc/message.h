@@ -14,6 +14,9 @@ typedef size_t (*message_read_cb	)
 typedef size_t (*message_length_cb	)
 		(const message_obj * const obj);
 
+typedef void (*message_set_length_cb	)
+		(const message_obj * const obj, size_t len);
+
 typedef size_t (*message_size_cb	)
 		(const message_obj * const obj);
 
@@ -30,6 +33,8 @@ struct message_obj_st {
 	message_write_cb	write;
 	/** Amount of data written */
 	message_length_cb	length;
+	/** Set length when accessing raw */
+	message_set_length_cb	set_length;
 	/** Total size of the underliying buffer */
 	message_size_cb		total_len;
 	/** Copy to one message to another */
