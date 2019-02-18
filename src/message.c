@@ -88,7 +88,7 @@ static size_t message_write_buffer(message_obj * const obj,
 				 char * const buffer, size_t len)
 {
 	message_priv_data *pdata = (message_priv_data *)obj->pdata;
-	size_t min = obj->total_len(obj) > len ?
+	size_t min = obj->total_len(obj) < len ?
 					obj->total_len(obj) : len;
 
 	memcpy(obj->ptr(obj), buffer, min);
@@ -112,6 +112,16 @@ static size_t message_length_buffer(const message_obj * const obj)
 {
 	message_priv_data *pdata = (message_priv_data *)obj->pdata;
 	return pdata->length;
+}
+
+
+static void message_set_length_buffer(const message_obj * const obj, size_t len)
+{
+	message_priv_data *pdata = (message_priv_data *) obj->pdata;
+	if (len > pdata->total_len)
+		WARNING("set length bigger than the actual buffer\n");
+
+	pdata->length = len;
 }
 
 static size_t message_totlen_buffer(const message_obj * const obj)
@@ -184,6 +194,7 @@ int message_init(message_obj * const obj)
 	obj->read = message_read_buffer;
 	obj->write = message_write_buffer;
 	obj->length = message_length_buffer;
+	obj->set_length = message_set_length_buffer;
 	obj->total_len = message_totlen_buffer;
 	obj->cpy = message_cpy_buffer;
 	obj->ptr = message_ptr_buffer;
