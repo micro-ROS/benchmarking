@@ -27,7 +27,13 @@
 #define UART_DEV_COUNT_MAX		1
 
 #define UART_COUNT_MAX			STRING_MAX_LENGTH
+#define UART_TIMEOUT_MS			2000U
 
+/* SWD */
+#define CFG_SECTION_SWD_CTRL		"swd-ctrl"
+#define CFG_SECTION_SWD_CTRL_IF		"name_interface"
+#define CFG_SECTION_SWD_CTRL_CPU	"name_cpu"
+#define DEBUG_OPENOCD
 
 /** This configuration will be taken either from a .INI file like
  *  or parsed from the command line arguments.
