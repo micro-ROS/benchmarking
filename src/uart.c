@@ -21,6 +21,8 @@
 /* perror */
 #include <errno.h>
 
+/*fcntl fnctl */
+#include <fcntl.h>
 
 /* time for timeout (could use poll or select) */
 #include <sys/time.h>
@@ -45,13 +47,15 @@
 
 #include <inttypes.h>
 
+#include <poll.h>
+
 #define SYNC_DWT_TRACE 		((char) 0x00)
 #define SYNC_DWT_END 		((char) 0x80)
 
 #define SYNC_NODWT_TRACE 	((char) 0xff)
 #define SYNC_NODWT_END 		((char) 0x7f)
 
-#define TIMEOUT_S		560	
+#define TIMEOUT_S		560
 
 #define SYNC_DWT_PACKET_SIZE	6
 #define SYNC_PACKET_SIZE	5
@@ -63,9 +67,9 @@ typedef struct  {
 	/** PATH to the char device */
 	char dev_path[UART_COUNT_MAX];
 	/** termios terminal configuraion settings */
-	struct termios tty;	
+	struct termios tty;
 	/** UART file descriptor */
-	int fd;
+	struct pollfd pfd;
 	/** If used (init was called) */
 	bool is_used;
 	/** If used (open was called) */
@@ -105,13 +109,13 @@ static int uart_set_baudrate(uart_obj * const uart, unsigned int baudrate)
 {
 	uart_private_data * const uartpd = uart->pdata;
 
-        if (tcgetattr (uartpd->fd, &uartpd->tty) != 0) {
+        if (tcgetattr (uartpd->pfd.fd, &uartpd->tty) != 0) {
                 ERROR("error %d from tcgetattr", errno);
                 return -1;
         }
- 
+
 	cfsetspeed (&uartpd->tty, baudrate);
-        if (tcsetattr (uartpd->fd, TCSANOW, &uartpd->tty) != 0)
+        if (tcsetattr (uartpd->pfd.fd, TCSANOW, &uartpd->tty) != 0)
         {
                 ERROR("error %d from tcsetattr", errno);
                 return -1;
@@ -132,6 +136,7 @@ static int uart_open(uart_obj * const uart)
 {
 	uart_private_data * const uartpd =
 	       			(uart_private_data * const) uart->pdata;
+	int flags;
 
 	if (uartpd->is_open) {
 		ERROR("Device %s: already open\n",
@@ -139,12 +144,14 @@ static int uart_open(uart_obj * const uart)
 		return -1;
 	}
 
-	uartpd->fd = open(uartpd->dev_path, O_RDONLY);
-	if (uartpd->fd < 0) {
+	uartpd->pfd.fd = open(uartpd->dev_path, O_RDONLY);
+	if (uartpd->pfd.fd < 0) {
 		ERROR("Device %s error while opening: %s\n",
 		      uartpd->dev_path, strerror(errno));
 		return -1;
 	}
+
+	uartpd->pfd.events = POLLIN;
 	uartpd->is_open = 1;
 
 	return 0;
@@ -161,7 +168,7 @@ static int uart_close(uart_obj * const uart)
 		      uartpd->dev_path);
 		return -1;
 	}
-	close(uartpd->fd);
+	close(uartpd->pfd.fd);
 
 	return 0;
 }
@@ -182,7 +189,7 @@ static int uart_debug_table(const char * const buffer, size_t len,
 }
 
 /**
- * \brief this function receives information from the UART device 
+ * \brief this function receives information from the UART device
  * \param obj: UART object reference.
  * \param msg: message object where data is going to be receive.
  */
@@ -193,10 +200,24 @@ size_t uart_receive(processing_obj * const obj, message_obj * const msg)
 	char ptr[UART_INTERNAL_BUF_LEN_MAX];
 	size_t readd, n = 0;
 
-	while ((readd = read(pdata->fd, &ptr[n], sizeof(ptr) - n)) > 0) {
-		n+=readd;
+	int rc = poll(&pdata->pfd, 1, UART_TIMEOUT_MS);
+
+	if (-1 == rc) {
+		ERROR("Error while polling %s\n", strerror(errno));
+		return -1;
 	}
 
+	if (!rc) {
+		WARNING("UART timed out!\n");
+		return -1;
+	}
+
+	if (!(pdata->pfd.revents & POLLIN)) {
+		WARNING("Invalid event!\n");
+		return -1;
+	}
+
+	n = read(pdata->pfd.fd, ptr, sizeof(ptr));
 	msg->write(msg, ptr, sizeof(ptr));
 	return n;
 }
@@ -218,7 +239,7 @@ int uart_init(uart_obj * const uart)
 		goto processing_init_failed;
 	}
 
-	proc_obj->data_out = uart_receive; 	
+	proc_obj->data_out = uart_receive;
 	return 0;
 processing_init_failed:
 free_instance_failed:
