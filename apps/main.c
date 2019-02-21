@@ -11,8 +11,10 @@
 #include <pipeline.h>
 #include <processing.h>
 #include <uart.h>
+#include <swd_ctrl.h>
 
 #include <stdbool.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -68,12 +70,19 @@ static struct {
 	.ui = NO_UI,
 };
 
+static bool is_running;
+
 void app_print_usage(const char *name)
 {
 	fprintf(stdout, USAGE, name);
 }
 
-#define DECODER_CONFIG_PATH_DEFAULT	"/tmp/default_decoder.ini"
+
+static void decoder_catch_signal(int signo) {
+	is_running = false;
+}
+
+#define DECODER_CONFIG_PATH_DEFAULT	"./res/configs/default_decoder.ini"
 void decoder_init_config(config_ini_obj *cfg)
 {
 	DEBUG("initializing config...\n");
@@ -178,10 +187,59 @@ int decoder_init_file_sink(file_obj *file_f)
 	return 0;
 }
 
-int main(int argc, char **argv)
+void decoder_init_swd_ctrl(swd_ctrl_obj *swd)
+{
+	DEBUG("swd ctrl initializing.\n");
+	if (swd_ctrl_init(swd)) {
+		exit(EXIT_FAILURE);
+	}
 
+	if (swd->set_cfg_if_from_gbl_cfg(swd)) {
+		exit(EXIT_FAILURE);
+	}
+
+	if (swd->set_cfg_cpu_from_gbl_cfg(swd)) {
+		exit(EXIT_FAILURE);
+	}
+	DEBUG("swd ctrl initialized.\n");
+}
+
+static void decoder_fini_config(config_ini_obj *cfg)
+{
+	config_ini_fini(cfg);
+}
+
+static void decoder_fini_swd_ctrl(swd_ctrl_obj *swd_ctrl)
+{
+	swd_ctrl->stop(swd_ctrl);
+	swd_ctrl_fini(swd_ctrl);
+}
+
+
+static void decoder_fini_uart(uart_obj *uart)
+{
+	uart->uart_fini_dev(uart);
+}
+
+static void decoder_fini_decoder_swo(decoder_swo_obj *swo)
+{
+	decoder_swo_fini(swo);
+}
+
+static void decoder_fini_form_cjson(form_obj *cjson)
+{
+	form_cjson_fini(cjson);
+}
+
+static void decoder_fini_file_sink(file_obj *file_p)
+{
+	file_p->file_fini(file_p);
+}
+
+int main(int argc, char **argv)
 {
 	config_ini_obj	cfgini;
+	swd_ctrl_obj	swd_ctrl;
 	uart_obj	uart_src;
 	form_obj	cjson_proc;
 	decoder_swo_obj	decoder_proc;
@@ -191,12 +249,20 @@ int main(int argc, char **argv)
 
 	int option_index = 0;
 
-	decoder_init_config(&cfgini);
+	if (signal(SIGINT, decoder_catch_signal) == SIG_ERR) {
+		exit(EXIT_FAILURE);
+	}
 
+	decoder_init_config(&cfgini);
+	decoder_init_swd_ctrl(&swd_ctrl);
 	decoder_init_uart(&uart_src);
 	decoder_init_decoder_swo(&decoder_proc);
 	decoder_init_form_cjson(&cjson_proc);
 	decoder_init_file_sink(&file_sink);
+
+	if (swd_ctrl.start(&swd_ctrl, argv[0])) {
+		exit(EXIT_FAILURE);
+	}
 
 	if (pipeline_init(&pipeline)) {
 		exit(EXIT_FAILURE);
@@ -207,12 +273,31 @@ int main(int argc, char **argv)
 	pipeline.attach_proc(&pipeline, (processing_obj *) &cjson_proc, NULL);
 	pipeline.attach_sink(&pipeline, (processing_obj *) &file_sink);
 
-	while (1) {
+	is_running = true;
+
+	while (is_running) {
 		if (pipeline.stream_data(&pipeline) < 0) {
 			WARNING("Problem while streaming\n");
 		}
 	}
 
+	decoder_fini_file_sink(&file_sink);
+	decoder_fini_form_cjson(&cjson_proc);
+	decoder_fini_decoder_swo(&decoder_proc);
+	decoder_fini_uart(&uart_src);
+	decoder_fini_swd_ctrl(&swd_ctrl);
+	decoder_fini_config(&cfgini);
+
+	DEBUG("Ending gracefully\n");
+#if 0
+	pipeline.fini(&pipeline);
+	file_sink.fini(&file_sink);
+	cjson_proc.fini(&cjson_proc);
+	decoder_proc.fini(&decoder_proc);
+	uart_src.fini(&uart_src);
+	swd_ctrl.fini(&swd_ctrl);
+	cfgini.fini(&cfgini);
+#endif
 #if 0
 	file_obj 	sink_obj;
 	memset(&file_obj, 0, sizeof(sink_obj));
