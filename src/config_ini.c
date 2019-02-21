@@ -20,6 +20,7 @@ static cfg_param * const  config_ini_get_value(config_obj * const obj,
 	config_ini_obj *cfg_ini_obj  = (config_ini_obj *)obj;
 	config_ini_priv_data *pdata = (config_ini_priv_data *)cfg_ini_obj->pdata;
 	ini_t *cfg = pdata->ini_cfg;
+	int rc = 1;
 
 	if (!pdata->is_cfg_init) {
 		ERROR("Config file not set, please provide\n");
@@ -28,7 +29,7 @@ static cfg_param * const  config_ini_get_value(config_obj * const obj,
 
 	switch (param->type) {
 	case CONFIG_INT:
-		ini_sget(cfg, param->section, param->name, "%d",
+		rc = ini_sget(cfg, param->section, param->name, "%d",
 			 &param->value.s32);
 	break;
 	case CONFIG_UNSIGNED_INT:
@@ -37,11 +38,19 @@ static cfg_param * const  config_ini_get_value(config_obj * const obj,
 	break;
 	case CONFIG_STR:
 		param->value.str = ini_get(cfg, param->section, param->name);
+		/* An error occured */
+		if(!param->value.str)
+			rc = 0;
 	break;
 	default:
 		WARNING("Unhandled type of param\n");
 		return NULL;
 	break;
+	}
+
+	if (!rc) {
+		ERROR("Could not get param [%s]-> %s\n",
+		      param->section, param->name);
 	}
 
 	return param;
@@ -118,6 +127,6 @@ int config_ini_fini(config_ini_obj * const obj)
 	ini_free(pdata->ini_cfg);
 	pdata->is_cfg_init = false;
 	pdata->is_init = false;
-	
-	return 0;	
+
+	return 0;
 }
