@@ -10,11 +10,13 @@ libpipeline_la_SOURCES =  \
 		        pipeline.c 	\
 			pkt_converter.c	\
 		        processing.c 	\
+			swd_ctrl.c	\
 		        uart.c
 
 libpipeline_la_CFLAGS  = $(LIBTOOL_INCFLAGS) -I$(top_srcdir)/inc  	\
 			 -I$(top_srcdir)/ext/libswo/ 			\
 			 -I$(top_srcdir)/ext/libcjson/			\
-			 -I$(top_srcdir)/ext/libini/src
+			 -I$(top_srcdir)/ext/libini/src			\
+			 -I$(top_srcdir)/ext/openocd/src
 
 libpipeline_la_LDFLAGS = $(LIBTOOL_LDFLAGS)
