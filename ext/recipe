@@ -27,6 +27,49 @@ git_retrieve()
 	cd ..
 }
 
+autotoolized_src()
+{
+	local src_dir=${1}
+	shift
+	local fname=${1}
+	shift
+	local src_files=$@
+
+	if [ -e ${src_dir}/.stamp_autoolized ]; then
+		return
+	fi
+
+	./autotoolize ${src_dir} ${fname} ${src_files}
+
+	if [ $? -eq 0 ]; then
+		touch ${src_dir}/.stamp_autoolized
+	fi
+}
+
+apply_patches()
+{
+	local DEST=${1}
+	shift
+	local LIST_PATCHES=$@ 
+
+	echo "PATCHED $LIST_PATCHES"
+	cd $DEST
+	
+	for i in $LIST_PATCHES; do
+		echo  "Applying patch $i"
+ 		patch -p1 <  ../$i
+	done
+
+	if [ $? -ne 0 ]; then
+	       printf "${RED} ${file}: ${filename}_applying_patch did not succeed${RESET}\n"
+	else 
+		touch .stamp_patched
+        fi
+
+	cd ..
+}
+
+
 recipes=$(find . -maxdepth 1 -iname "*.mk")
 
 for file in $recipes 
@@ -76,9 +119,21 @@ do
 	fi
 
 	autotoolize_cmd=$(eval echo \$"${filename}_need_autotoolize")
-	if [ $autotoolize_cmd -eq 1 ]; then
-		autotoolize_src_files=$(eval echo \$"${filename}_source_files")
-		./autotoolize $git_src_dir ${filename} ${autotoolize_src_files}
+	if [ ! -z $autotoolize_cmd ]; then
+		if [ $autotoolize_cmd -eq 1 ]; then
+			autotoolize_src_files=$(eval echo \$"${filename}_source_files")
+			autotoolized_src  $git_src_dir $filename $autotoolize_src_files
+		fi
+	fi
+
+	list_patches=$(eval echo \$"${filename}_patches")
+	if [ ! -e $git_src_dir/.stamp_patched ]; then
+		if [ ! -z $list_patches ]; then
+			apply_patches $git_src_dir $list_patches
+		fi
+	else 
+		printf "${YELLOW} ${file}: sources already patched " 
+		printf	"If you want to force patching delete .stamp_patched${RESET}\n"
 	fi
 
 	cd $git_src_dir
