@@ -38,7 +38,7 @@ static int pipeline_attach_src(pipeline_obj * const obj, processing_obj *const s
 	return 0;
 }
 
-static int pipeline_attach_proc(pipeline_obj * const obj, 
+static int pipeline_attach_proc(pipeline_obj * const obj,
 			   processing_obj * const src,
 	       		   processing_obj * const dst)
 {
@@ -90,14 +90,12 @@ static int pipeline_stream_data(pipeline_obj * const obj)
 
 	for (unsigned int i=0; i<(pdata->count-1); i++) {
 		DEBUG("Data incoming from element %d\n", i);
-		if (pdata->proc_objs[i]->data_out(pdata->proc_objs[i], msg) < 0) {
-			rc = -1;
+		if ((rc = pdata->proc_objs[i]->data_out(pdata->proc_objs[i], msg) < 0)) {
 			break;
 		}
 
 		DEBUG("Data passed to the next element %d\n", i);
-		if (pdata->proc_objs[i+1]->data_in(pdata->proc_objs[i+1], msg) < 0) {
-			rc = -1;
+		if ((rc = pdata->proc_objs[i+1]->data_in(pdata->proc_objs[i+1], msg) < 0)) {
 			break;
 		}
 	}
