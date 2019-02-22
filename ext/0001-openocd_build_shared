@@ -1,0 +1,41 @@
+diff --git a/configure.ac b/configure.ac
+index d4338dfb..2f1c21f1 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -33,7 +33,8 @@ dnl disable checks for C++, Fortran and GNU Java Compiler
+ m4_defun([_LT_AC_LANG_CXX_CONFIG], [:])
+ m4_defun([_LT_AC_LANG_F77_CONFIG], [:])
+ m4_defun([_LT_AC_LANG_GCJ_CONFIG], [:])
+-AC_DISABLE_SHARED
++AC_DISABLE_STATIC
++AC_ENABLE_SHARED
+ AC_PROG_LIBTOOL
+ AC_SUBST([LIBTOOL_DEPS])
+ 
+diff --git a/src/Makefile.am b/src/Makefile.am
+index 07981aa6..72dec1c4 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -1,4 +1,4 @@
+-noinst_LTLIBRARIES += %D%/libopenocd.la
++lib_LTLIBRARIES = %D%/libopenocd.la
+ bin_PROGRAMS += %D%/openocd
+ 
+ %C%_openocd_SOURCES = \
+@@ -35,7 +35,7 @@ endif
+ %C%_libopenocd_la_CPPFLAGS += $(AM_CPPFLAGS) $(CPPFLAGS)
+ 
+ # the library search path.
+-%C%_libopenocd_la_LDFLAGS = $(all_libraries)
++%C%_libopenocd_la_LDFLAGS = $(all_libraries) -version-info 0:0:0
+ 
+ if IS_MINGW
+ MINGWLDADD = -lws2_32
+@@ -55,6 +55,7 @@ endif
+ 	%D%/rtos/librtos.la \
+ 	%D%/helper/libhelper.la
+ 
++
+ BIN2C = $(srcdir)/%D%/helper/bin2char.sh
+ 
+ STARTUP_TCL_SRCS =
