@@ -35,16 +35,16 @@ LTCFLAGS="$CFLAGS"
 
 # do AC_CHECK_HEADERS
 top_abs_path=`(pwd)`
-ac_list_folder_ext="`(ls -d ext/*/)`"
+ac_list_folder_ext=`(for i in $(ls -d ext/*/); do printf "$i ";  done)`
 
-##AC_SUBST([ac_list_folder_ext])
+AC_SUBST([ac_list_folder_ext])
 
 ### Configuration for openocd
 AC_ARG_ENABLE([swd-openocd],
     AS_HELP_STRING([--disable-swd-openocd], [Disable use of openocd to control swd]))
 
 AS_IF([test "x$enable_openocd" != "xno"], [
-	OPENOCD_SCRIPT_PATH=$top_abs_path/ext/openocd
+	OPENOCD_SCRIPT_PATH=$top_abs_path/ext/openocd/tcl
 	AC_DEFINE_UNQUOTED([SWD_CTRL_OPENOCD_SCRIPT_PATH],["$OPENOCD_SCRIPT_PATH"], 
 				[Path to openocd scripts])
 	AC_DEFINE([SWD_CTRL_OPENOCD], [], [Activate openOCD])
