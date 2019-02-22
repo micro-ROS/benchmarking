@@ -31,8 +31,8 @@ static const char *swd_ctrl_config_gbl[CFG_CPU+1] = {
 static const swd_ctrl_config swd_ctrl_cfgs[] = {
 			{
 				.type = CFG_INTERFACE,
-				.cfg_name = "stlink*",
-				.cmd = "-f" SWD_CTRL_OPENOCD_INTERFACE_PATH"/stlink.cfg",
+				.cfg_name = "stlink-v2",
+				.cmd = "-f" SWD_CTRL_OPENOCD_INTERFACE_PATH"/stlink-v2.cfg",
 			},
 			{
 				.type = CFG_CPU,
@@ -130,9 +130,10 @@ static int swd_ctrl_start(swd_ctrl_obj * const obj, char * const prog)
 
 	const char *argv[] = {
 				prog,
-#ifdef DEBUG_OPENOCD
+#ifdef SWD_CTRL_OPENOCD_DEBUG
 				"-d",
 #endif
+				"-s"SWD_CTRL_OPENOCD_SCRIPT_PATH,
 				pdata->cfgs[CFG_INTERFACE],
 			        pdata->cfgs[CFG_CPU],
 				SWD_CTRL_OPENOCD_INIT,
@@ -144,7 +145,7 @@ static int swd_ctrl_start(swd_ctrl_obj * const obj, char * const prog)
 
 	if (!pid) {
 		/* I am your child */
-#ifndef DEBUG_OPENOCD
+#ifndef SWD_CTRL_OPENOCD_DEBUG
 		close(STDIN_FILENO);
 		close(STDOUT_FILENO);
 		close(STDERR_FILENO);
