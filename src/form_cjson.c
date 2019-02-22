@@ -167,6 +167,10 @@ static size_t form_json_receive_data(processing_obj * const obj,
 						((form_obj *) obj)->pdata;
 	jpdata->ptf->root = jpdata->packets;
 
+	if (obj->req_end) {
+		msg->write(msg, "\t\t]\n}", sizeof("]\n}")-1);
+		return 0;
+	}
 	return pkt_convert(jpdata->ptf, msg);
 }
 
