@@ -2,6 +2,8 @@
 #define __CONFIG_H__
 
 
+#include <config_lib.h>
+
 #ifdef  MESSAGE_DYNAMIC
 
 #else
@@ -29,11 +31,32 @@
 #define UART_COUNT_MAX			STRING_MAX_LENGTH
 #define UART_TIMEOUT_MS			2000U
 
-/* SWD */
+/* Configuration */
+#ifdef CONFIG_LIBINI
+
 #define CFG_SECTION_SWD_CTRL		"swd-ctrl"
 #define CFG_SECTION_SWD_CTRL_IF		"name_interface"
 #define CFG_SECTION_SWD_CTRL_CPU	"name_cpu"
-#define DEBUG_OPENOCD
+
+#else /* CONFIG_LIBINI */
+
+#error "Not other configuration library than libinit defined"
+
+#endif /* CONFIG_LIBINI */
+
+#ifdef SWD_CTRL_OPENOCD /* SWD_CTRL_OPENOCD */
+
+#define SWD_CTRL_OPENOCD_INTERFACE_PATH SWD_CTRL_OPENOCD_SCRIPT_PATH"/interface/"
+#define SWD_CTRL_OPENOCD_CPU_PATH	SWD_CTRL_OPENOCD_SCRIPT_PATH"/target/"
+#define SWD_CTRL_OPENOCD_INIT		"-c init"
+#define SWD_CTRL_OPENOCD_RESET_START	"-c reset run"
+#define SWD_CTRL_OPENOCD_DEBUG
+
+#else /* SWD_CTRL_OPENOCD */
+
+#error "Not other swd ctrl library than openOCD exists"
+
+#endif /* SWD_CTRL_OPENOCD */
 
 /** This configuration will be taken either from a .INI file like
  *  or parsed from the command line arguments.
