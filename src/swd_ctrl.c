@@ -12,20 +12,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#define  SWD_CTRL_INIT			"-c init"
-#define  SWD_CTRL_RESET_START		"-c reset run"
-
-//#define	SWD_CTRL_OPENOCD_INTERFACE_PATH "@@OPENOCD_INTERFACE_PATH@@/"
-//#define	SWD_CTRL_OPENOCD_CPU_PATH	"@@OPENOCD_CPU_PATH@@/"
-
-//#define	SWD_CTRL_OPENOCD_INTERFACE_PATH "tcl/interface/"
-//#define	SWD_CTRL_OPENOCD_CPU_PATH	"tcl/target/"
-
-#define	SWD_CTRL_OPENOCD_INTERFACE_PATH "interface/"
-#define	SWD_CTRL_OPENOCD_CPU_PATH	"target/"
-#define SWD_CTRL_OPENOCD_SEARCH_PATH	"/home/amalki/prjs/microROS/soft/apps" \
-					"/decoder/ext/openocd/tcl/"
-
 enum config_type {
 	CFG_INTERFACE = 0,
 	CFG_CPU,
@@ -149,8 +135,8 @@ static int swd_ctrl_start(swd_ctrl_obj * const obj, char * const prog)
 #endif
 				pdata->cfgs[CFG_INTERFACE],
 			        pdata->cfgs[CFG_CPU],
-				SWD_CTRL_INIT,
-				SWD_CTRL_RESET_START
+				SWD_CTRL_OPENOCD_INIT,
+				SWD_CTRL_OPENOCD_RESET_START
 		       };
 	int argc = ARRAY_SIZE(argv);
 	pid_t  pid = fork();
