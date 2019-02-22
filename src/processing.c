@@ -1,8 +1,6 @@
 #include <processing.h>
 #include <debug.h>
 
-#include <stdbool.h>
-
 typedef struct {
 	bool is_init;
 } processing_priv_data;
@@ -28,6 +26,8 @@ int processing_init(processing_obj * const obj)
 	obj->data_in = processing_data_in_default;
 	obj->data_out = processing_data_out_default;
 
+	obj->req_end = false;
+
 	return 0;
 }
 
@@ -37,6 +37,7 @@ int processing_fini(processing_obj * const obj)
 
 	obj->data_in = processing_data_in_default;
 	obj->data_out = processing_data_out_default;
+	obj->req_end = true;
 
 	return 0;
 }

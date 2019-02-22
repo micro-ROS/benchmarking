@@ -3,6 +3,8 @@
 
 #include <message.h>
 
+#include <stdbool.h>
+
 typedef struct processing_obj_st processing_obj;
 
 typedef size_t (*processing_data_in_cb	) (processing_obj * const obj, message_obj * const msg);
@@ -14,6 +16,8 @@ struct processing_obj_st {
 
 	/** Callback to register to receive data */
 	processing_data_out_cb 		data_out;
+
+	bool				req_end;
 };
 
 int processing_init(processing_obj * const obj);
