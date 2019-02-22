@@ -8,9 +8,7 @@ SUBDIRS= src \
 
 
 clean-local:
-	rm -rf "@ac_list_folder_ext@"
-	rm -rf src/.deps
-	rm -rf src/.libs
+	rm -rf @ac_list_folder_ext@
 
 
 MAINTAINERCLEANFILES = \
