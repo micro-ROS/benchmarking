@@ -79,7 +79,7 @@ void app_print_usage(const char *name)
 
 
 static void decoder_catch_signal(int signo) {
-	is_running = false;
+	pipeline_set_end_all();
 }
 
 #define DECODER_CONFIG_PATH_DEFAULT	"./res/configs/default_decoder.ini"
@@ -273,9 +273,8 @@ int main(int argc, char **argv)
 	pipeline.attach_proc(&pipeline, (processing_obj *) &cjson_proc, NULL);
 	pipeline.attach_sink(&pipeline, (processing_obj *) &file_sink);
 
-	is_running = true;
 
-	while (is_running) {
+	while (!pipeline.is_stopped(&pipeline)) {
 		if (pipeline.stream_data(&pipeline) < 0) {
 			WARNING("Problem while streaming\n");
 		}
