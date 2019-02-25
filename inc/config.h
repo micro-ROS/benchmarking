@@ -10,7 +10,7 @@
 /** This is */
 #define MESSAGE_NSTANCES_CNT_MAX	32
 /** This is */
-#define MESSAGE_BUFFER_SZ_MAX		4096
+#define MESSAGE_BUFFER_SZ_MAX		8096
 
 #endif
 
