@@ -8,6 +8,9 @@ typedef struct message_obj_st message_obj;
 typedef size_t (*message_write_cb	)
 		(message_obj * const obj, char * const buffer, size_t len);
 
+typedef size_t (*message_append_cb	)
+		(message_obj * const obj, char * const buffer, size_t len);
+
 typedef size_t (*message_read_cb	)
 		(message_obj * const obj, char * const buffer, size_t len);
 
@@ -23,6 +26,7 @@ typedef size_t (*message_size_cb	)
 typedef size_t (*message_cpy_cb )
 		(message_obj * const msg, message_obj * restrict src);
 
+
 typedef char *(*message_ptr_cb ) (const message_obj * const obj);
 
 struct message_obj_st {
@@ -31,6 +35,8 @@ struct message_obj_st {
 	/** Write to a message's buffer, this destroy data 
 	 *  within the buffer 	 **/
 	message_write_cb	write;
+	/** Append data to the end of the buffer */
+	message_append_cb	append;
 	/** Amount of data written */
 	message_length_cb	length;
 	/** Set length when accessing raw */
