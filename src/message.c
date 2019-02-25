@@ -75,6 +75,16 @@ static size_t message_write_default(message_obj * const obj,
 }
 
 /**
+ * \brief append data to the end of buffer
+ */
+static size_t message_append_default(message_obj * const obj,
+				 char * const buffer, size_t len)
+{
+	WARNING("Message Object not initialized\n");
+	return -1;
+}
+
+/**
  * \brief Default read callback
  * */
 static size_t message_read_default(message_obj * const obj,
@@ -95,6 +105,26 @@ static size_t message_write_buffer(message_obj * const obj,
 	pdata->length = min;
 
 	return min;
+}
+
+static size_t message_append_buffer(message_obj * const obj,
+				 char * const buffer, size_t len)
+{
+	message_priv_data *pdata = (message_priv_data *)obj->pdata;
+	size_t pos = obj->length(obj);
+
+	if ((len + pos) > obj->total_len(obj)) {
+		/* TODO memmove in dynamic allocation */
+		ERROR("Not enought space in the buffer,"
+			 "(len/max) %ld/%ld\n",
+				len+pos, obj->total_len(obj));
+		return -1;
+	}
+
+	memcpy(&obj->ptr(obj)[pos], buffer, len);
+	obj->set_length(obj, len + pos);
+
+	return len;
 }
 
 static size_t message_read_buffer(message_obj * const obj, char * const buffer,
@@ -193,6 +223,7 @@ int message_init(message_obj * const obj)
 	/** For now we use buffer only */
 	obj->read = message_read_buffer;
 	obj->write = message_write_buffer;
+	obj->append = message_append_buffer;
 	obj->length = message_length_buffer;
 	obj->set_length = message_set_length_buffer;
 	obj->total_len = message_totlen_buffer;
@@ -222,6 +253,7 @@ int message_fini(message_obj * const obj)
 
 	obj->read = message_read_default;
 	obj->write = message_write_default;
+	obj->append = message_append_default;
 	obj->length = message_length_default;
 	obj->total_len = message_totlen_default;
 	obj->cpy = message_cpy_default;
