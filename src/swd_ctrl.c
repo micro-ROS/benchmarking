@@ -34,11 +34,20 @@ static const swd_ctrl_config swd_ctrl_cfgs[] = {
 				.cfg_name = "stlink-v2",
 				.cmd = "-f" SWD_CTRL_OPENOCD_INTERFACE_PATH"/stlink-v2.cfg",
 			},
+#if 1
+			{
+				.type = CFG_CPU,
+				.cfg_name = "stm32f407",
+				.cmd = "-f" SWD_CTRL_OPENOCD_CPU_PATH"/stm32f407.cfg",
+			},
+#endif
+#if 0
 			{
 				.type = CFG_CPU,
 				.cfg_name = "stm32f4*",
 				.cmd = "-f" SWD_CTRL_OPENOCD_CPU_PATH"/stm32f4x.cfg",
 			},
+#endif
 };
 
 typedef struct {
