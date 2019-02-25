@@ -109,6 +109,7 @@ static int uart_set_baudrate(uart_obj * const uart, unsigned int baudrate)
 {
 	uart_private_data * const uartpd = uart->pdata;
 
+	DEBUG("Setting baudrate %d \n", baudrate);
         if (tcgetattr (uartpd->pfd.fd, &uartpd->tty) != 0) {
                 ERROR("error %d from tcgetattr", errno);
                 return -1;
@@ -151,7 +152,7 @@ static int uart_open(uart_obj * const uart)
 		return -1;
 	}
 
-	uartpd->pfd.events = POLLIN;
+	uartpd->pfd.events = POLLIN|POLLPRI;
 	uartpd->is_open = 1;
 
 	return 0;
@@ -199,26 +200,38 @@ size_t uart_receive(processing_obj * const obj, message_obj * const msg)
 	uart_private_data * const pdata = (uart_private_data *) uart->pdata;
 	char ptr[UART_INTERNAL_BUF_LEN_MAX];
 	size_t readd, n = 0;
+	unsigned int retries = UART_MAX_POLL_RETRIES;
+	int rc;
+	while (sizeof(ptr) - n) {
+		rc = poll(&pdata->pfd, 1, UART_TIMEOUT_MS);
+		if (-1 == rc) {
+			ERROR("Error while polling %s\n", strerror(errno));
+			return -1;
+		}
 
-	int rc = poll(&pdata->pfd, 1, UART_TIMEOUT_MS);
+		if (!rc) {
+			if (retries--)
+				continue;
 
-	if (-1 == rc) {
-		ERROR("Error while polling %s\n", strerror(errno));
-		return -1;
+			WARNING("UART timed out no data !\n");
+			return -1;
+		}
+
+		if (!(pdata->pfd.revents & POLLIN)) {
+			WARNING("Invalid event!\n");
+			return -1;
+		}
+
+		readd = read(pdata->pfd.fd, &ptr[n], sizeof(ptr) - n);
+		if (readd < 0) {
+			return -1;
+		}
+		n+=readd;
 	}
 
-	if (!rc) {
-		WARNING("UART timed out!\n");
-		return -1;
-	}
+	DEBUG("Read %ld\n", n);
+	msg->write(msg, ptr, n);
 
-	if (!(pdata->pfd.revents & POLLIN)) {
-		WARNING("Invalid event!\n");
-		return -1;
-	}
-
-	n = read(pdata->pfd.fd, ptr, sizeof(ptr));
-	msg->write(msg, ptr, sizeof(ptr));
 	return n;
 }
 
