@@ -81,7 +81,7 @@ static int pipeline_stream_data(pipeline_obj * const obj)
 	pipeline_private_data * const pdata =
 			(pipeline_private_data * const ) obj->pdata;
 	message_obj *msg = &pdata->msg;
-	int rc = 0;
+	size_t rc = 0;
 
 
 	if (pdata->count < 2) {
@@ -99,7 +99,8 @@ static int pipeline_stream_data(pipeline_obj * const obj)
 
 	for (unsigned int i=0; i<(pdata->count-1); i++) {
 		DEBUG("Data incoming from element %d\n", i);
-		if ((rc = pdata->proc_objs[i]->data_out(pdata->proc_objs[i], msg) < 0)) {
+		msg->set_length(msg, 0);
+		if ((rc = pdata->proc_objs[i]->data_out(pdata->proc_objs[i], msg) <= 0)) {
 			break;
 		}
 
@@ -147,7 +148,6 @@ int pipeline_init(pipeline_obj *obj)
 	if (message_init(&pdata->msg)) {
 		return -1;
 	}
-
 
 	memset(obj, 0, sizeof(*obj));
 	obj->attach_src = pipeline_attach_src;
