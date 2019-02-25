@@ -9,7 +9,8 @@
 
 typedef struct {
 	struct libswo_context *swo_ctx;
-	unsigned int packet_decoded;
+	unsigned int cur_packet_decoded;
+	unsigned int tot_packet_decoded;
 	bool is_used;
 	message_obj msg;
 } decoder_swo_priv_data;
@@ -17,13 +18,17 @@ typedef struct {
 
 static decoder_swo_priv_data decoder_swo_pdata;
 
-static union libswo_packet packets_decoded[1024 / sizeof(union libswo_packet)];
-static unsigned int packet_decoded = 0;
+static union libswo_packet packets_decoded[4096 / sizeof(union libswo_packet)];
 
 static void default_packet_handler(const union libswo_packet *packet,
 				   unsigned int c, const char *s)
 {
-	//DEBUG("Message %d, %s \n", c, s);
+#if 0
+	if (packet->type == LIBSWO_PACKET_TYPE_DWT_PC_SAMPLE ||
+		packet->type == LIBSWO_PACKET_TYPE_DWT_PC_VALUE)
+
+		DEBUG("Message %d, %s \n", c, s);
+#endif
 }
 
 
@@ -61,13 +66,15 @@ static int packet_cb(struct libswo_context *ctx,
 		const union libswo_packet *packet, void *user_data)
 {
 	(void)ctx;
-	(void)user_data;
 	unsigned int count;
 	char *name;
+	decoder_swo_priv_data *pdata =
+		(decoder_swo_priv_data *) user_data;
 
 #if 0
-	if (!(packet_type_filter & (1 << packet->type)))
-		return TRUE;
+	if (!((1 << LIBSWO_PACKET_TYPE_DWT_PC_SAMPLE | 1 << LIBSWO_PACKET_TYPE_DWT_PC_VALUE)
+	& (1 << packet->type)))
+		return true;
 #endif
 	if (((packet->type < LIBSWO_PACKET_TYPE_UNKNOWN) ||
 		(packet->type > LIBSWO_PACKET_TYPE_HW)) &&
@@ -82,8 +89,11 @@ static int packet_cb(struct libswo_context *ctx,
 	name = default_handlers[packet->type].name;
 	default_handlers[packet->type].pkt_cb(packet, count, name);
 
-	memcpy(&packets_decoded[packet_decoded], packet, sizeof(*packet));
-	packet_decoded++;
+	if ((1 << LIBSWO_PACKET_TYPE_UNKNOWN) & (1 << packet->type))
+		return true;
+
+	memcpy(&packets_decoded[pdata->cur_packet_decoded], packet, sizeof(*packet));
+	pdata->cur_packet_decoded++;
 
 	return true;
 }
@@ -96,23 +106,26 @@ static size_t decoder_swo_data_in(processing_obj * const obj,
 		(decoder_swo_priv_data *) dec_swo->pdata;
 	int ret;
 
-	DEBUG("Processing data\n");
 	ret = libswo_feed(pdata->swo_ctx,
 			       msg->ptr(msg), msg->length(msg));
 	if (ret) {
 		ERROR("Error while getting retrieving data\n");
-		ERROR("%s", libswo_strerror_name(ret));
+		ERROR("%s\n", libswo_strerror_name(ret));
 		return -1;
 	}
 
 	ret = libswo_decode(pdata->swo_ctx, 0);
 	if (ret) {
 		ERROR("Error while decoding data\n");
-		ERROR("%s", libswo_strerror_name(ret));
+		ERROR(" --> %s\n", libswo_strerror_name(ret));
 		return -1;
 	}
-
-	return 0;
+	pdata->tot_packet_decoded += pdata->cur_packet_decoded;
+	DEBUG("decoded %d\n", pdata->cur_packet_decoded);
+	DEBUG("total size decoded %d\n",
+			pdata->cur_packet_decoded* sizeof (union libswo_packet));
+	DEBUG("Total number of decoded packet %d\n", pdata->tot_packet_decoded);
+	return pdata->cur_packet_decoded * sizeof (union libswo_packet);
 }
 
 static size_t decoder_swo_data_out(processing_obj * const obj,
@@ -121,18 +134,22 @@ static size_t decoder_swo_data_out(processing_obj * const obj,
 	decoder_swo_obj *dec_swo = (decoder_swo_obj *) obj;
 	decoder_swo_priv_data *pdata = (decoder_swo_priv_data *) dec_swo->pdata;
 	message_obj *msg_internal = &pdata->msg;
-
+	unsigned int __packet_decoded ;
 
 	memset(msg->ptr(msg), 0, msg->total_len(msg));
 	msg->write(msg, (void *) packets_decoded,
-	       packet_decoded * sizeof (union libswo_packet));
+	       pdata->cur_packet_decoded * sizeof (union libswo_packet));
 #if 0
 	for (unsigned int i=0; i<len; i++) {
 		DEBUG("data %d, %02x\n", i, data[i]);
 	}
+	DEBUG("Number of data received %ld\n", packet_decoded * sizeof (union libswo_packet));
 #endif
-	packet_decoded = 0;
-	return 0;
+	__packet_decoded = pdata->cur_packet_decoded;
+	DEBUG("Number of data received %ld\n", __packet_decoded * sizeof (union libswo_packet));
+	pdata->cur_packet_decoded = 0;
+
+	return __packet_decoded * sizeof (union libswo_packet);
 }
 
 static decoder_swo_priv_data *decoder_swo_get_free_instance(void)
@@ -185,7 +202,7 @@ int decoder_swo_init(decoder_swo_obj * const obj)
 		goto libswo_init_failed;
 	}
 
-	if (libswo_set_callback(pdata->swo_ctx, packet_cb, NULL)) {
+	if (libswo_set_callback(pdata->swo_ctx, packet_cb, pdata)) {
 		goto libswo_set_callback_failed;
 	}
 
