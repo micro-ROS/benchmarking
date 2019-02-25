@@ -17,7 +17,7 @@
 #define STRING_MAX_LENGTH		255
 
 /** Used in the uart receive callback */
-#define UART_INTERNAL_BUF_LEN_MAX	1024
+#define UART_INTERNAL_BUF_LEN_MAX	64
 
 /** The maximum length of the string */
 #define CONFIG_STR_LEN_MAX		512
@@ -29,7 +29,8 @@
 #define UART_DEV_COUNT_MAX		1
 
 #define UART_COUNT_MAX			STRING_MAX_LENGTH
-#define UART_TIMEOUT_MS			2000U
+#define UART_TIMEOUT_MS			100U
+#define UART_MAX_POLL_RETRIES		10
 
 /* Configuration */
 #ifdef CONFIG_LIBINI
