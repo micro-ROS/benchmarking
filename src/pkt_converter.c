@@ -320,13 +320,14 @@ static inline void handle_pc_value_pkt_value(const union libswo_packet *pkt,
 					   void *data)
 {
 	unsigned int *data_u = (unsigned int *) data;
-	*data_u = (pkt->pc_value.pc);
+	*data_u = (pkt->pc_sample.pc);
 }
 
 static inline void handle_pc_value_pkt_comp(const union libswo_packet *pkt,
 					   void *data)
 {
 	unsigned int *data_u = (unsigned int *) data;
+	/* TODO FIX value to get pc  */
 	*data_u = (pkt->pc_value.cmpn);
 }
 
@@ -474,8 +475,8 @@ static struct packet_type_info ptis[] = {
 			PKT_VALUE_HELPER(pc_sample, value, PKT_TYPE_HEX),
 		}
 	},
-	[LIBSWO_PACKET_TYPE_DWT_PC_SAMPLE] = {
-		.name = "PC comp",
+	[LIBSWO_PACKET_TYPE_DWT_PC_VALUE] = {
+		.name = "pc comp",
 		.count = 2,
 		.values = {
 			PKT_VALUE_HELPER(pc_value, comp, PKT_TYPE_UNSIGNED),
@@ -590,8 +591,10 @@ size_t pkt_convert(pkt_to_form * const ptf, message_obj * const obj)
 	unsigned int pkt_count = obj->length(obj) / sizeof (union libswo_packet);
 
 
+	DEBUG("Number of packet received %d\n", pkt_count);
 	if (!pkt_count) {
 		WARNING("Buffer underflow\n");
+		return -1;
 	}
 
 	for (unsigned int i = 0; i < pkt_count; i++) {
