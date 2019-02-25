@@ -11,6 +11,9 @@
 #include <unistd.h>
 
 
+#define CJSON_END_OF_FILE "\n\t]\n}"
+
+
 typedef struct {
 	cfg_param param;
 	/**
@@ -77,26 +80,51 @@ static void form_json_format_init_output(message_obj * const msg)
 
 	brace[0] = ',';
 	brace[1] = '\n';
-	msg->set_length(msg, msg->length(msg) - ((uintptr_t) end - (uintptr_t)brace));
+	msg->set_length(msg, msg->length(msg) - ((uintptr_t) end
+				- (uintptr_t)brace) - 1);
 }
 
-static void form_json_format_child_output(message_obj * const msg)
+static int form_json_format_child_output(message_obj * const msg)
 {
-	char *brace, *lf, *old_lf;
-	unsigned int shifts = 0, written = 0;
-	char temp[MESSAGE_BUFFER_SZ_MAX];
+	unsigned int written = 0;
+	char *prev_token, *token, *copy, *temp;
+	char *delimiter = "\n";
+	unsigned int pos = 0;
 
-	memcpy(temp, msg->ptr(msg), msg->length(msg));
-	lf = strtok(temp, "\n");
-	while (lf) {
-		written += snprintf(&msg->ptr(msg)[written], msg->total_len(msg) - written,
-				    "\t\t%s\n", lf);
-		lf = strtok(NULL, "\n");
+	if (!(temp = strndup(msg->ptr(msg), MESSAGE_BUFFER_SZ_MAX - 1))) {
+		ERROR("Could not allocate memory to temp buffer\n");
+		return -1;
+	}
+	if (!(copy = strndup(msg->ptr(msg), MESSAGE_BUFFER_SZ_MAX - 1))) {
+		ERROR("Could not allocate memory to copy buffer\n");
+		return -1;
 	}
 
-	msg->ptr(msg)[written - 1] = ',';
-	msg->ptr(msg)[written] = '\n';
-	msg->set_length(msg, written + 1);
+	token = strtok(temp, delimiter);
+	while (token) {
+		pos = token - temp;//+ strnlen(temp, MESSAGE_BUFFER_SZ_MAX - pos);
+
+		if (copy[pos] == '{') {
+			written += snprintf(&msg->ptr(msg)[written],
+					    msg->total_len(msg) - written,
+					    ", %s\n", token);
+		} else if (copy[pos] == '}') {
+			written += snprintf(&msg->ptr(msg)[written],
+					    msg->total_len(msg) - written,
+					    "\t\t}, {\n");
+		}else {
+			written += snprintf(&msg->ptr(msg)[written],
+					    msg->total_len(msg) - written,
+					    "\t\t%s\n", token);
+		}
+
+		token = strtok(NULL, delimiter);
+	}
+
+	msg->ptr(msg)[written - 4] = '\0';
+	msg->set_length(msg, written - 4);
+	free(copy);
+	free(temp);
 }
 
 static size_t form_json_print_nodes(cJSON *pnode, message_obj * const msg)
@@ -118,8 +146,7 @@ static size_t form_json_print_nodes(cJSON *pnode, message_obj * const msg)
 		goto buffer_failed;
 	}
 
-	msg->write(msg, data, rc + 1);
-	/* DEBUG ("json:%s\n", msg->ptr(msg));*/
+	msg->append(msg, data, rc);
 	rc = msg->length(msg);
 buffer_failed:
 	free(data);
@@ -133,7 +160,12 @@ static size_t form_json_send_data(processing_obj * const obj,
 	form_json_priv_data *jpdata = (form_json_priv_data *)
 						((form_obj *) obj)->pdata;
 	cJSON *node;
-	int rc=0, err;
+	int rc = 0, err;
+
+	if (obj->req_end) {
+		msg->write(msg, CJSON_END_OF_FILE ,sizeof(CJSON_END_OF_FILE) - 1);
+		return sizeof(CJSON_END_OF_FILE) - 1;
+	}
 
 	/* TODO clean this function */
 	if (!jpdata->is_nfirstrun) {
@@ -143,21 +175,29 @@ static size_t form_json_send_data(processing_obj * const obj,
 		form_json_format_init_output(msg);
 	} else {
 		node = jpdata->ptf->root->child;
+		int i=0;
 		while (node) {
-			if ( err = form_json_print_nodes(node, msg) < 0) {
+			if ((err = form_json_print_nodes(node, msg)) < 0) {
 				return -1;
 			}
 
-			form_json_format_child_output(msg);
-
-			rc += err;
+			rc = err;
 			node = node->next;
+		}
+
+		if (form_json_format_child_output(msg)) {
+			return 0;
 		}
 	}
 
 	cJSON_Delete(jpdata->ptf->root->child);
 	jpdata->ptf->root->child = NULL;
-	return rc;
+
+	if (rc < 0) {
+		return rc;
+	}
+
+	return msg->length(msg);
 }
 
 static size_t form_json_receive_data(processing_obj * const obj,
@@ -168,9 +208,9 @@ static size_t form_json_receive_data(processing_obj * const obj,
 	jpdata->ptf->root = jpdata->packets;
 
 	if (obj->req_end) {
-		msg->write(msg, "\t\t]\n}", sizeof("]\n}")-1);
 		return 0;
 	}
+
 	return pkt_convert(jpdata->ptf, msg);
 }
 
