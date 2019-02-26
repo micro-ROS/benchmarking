@@ -87,9 +87,11 @@ static void form_json_format_init_output(message_obj * const msg)
 
 static int form_json_format_child_output(message_obj * const msg)
 {
-	unsigned int written = 0;
+	size_t written = 0;
 	char *prev_token, *token, *copy, *temp;
+	char buffer[STRING_MAX_LENGTH];
 	char *delimiter = "\n";
+	size_t tot_len = msg->total_len(msg);
 	size_t read;
 	unsigned int pos = 0;
 
@@ -103,29 +105,34 @@ static int form_json_format_child_output(message_obj * const msg)
 	}
 
 	token = strtok(temp, delimiter);
+	msg->set_length(msg, 0);
 	while (token) {
-		pos = token - temp;//+ strnlen(temp, MESSAGE_BUFFER_SZ_MAX - pos);
+		pos = token - temp;
 
 		if (copy[pos] == '{') {
-			read = snprintf(&msg->ptr(msg)[written],
-					    msg->total_len(msg) - written,
+			read = snprintf(buffer, sizeof(buffer) - 1,
 					    ", %s\n", token);
 		} else if (copy[pos] == '}') {
-			read = snprintf(&msg->ptr(msg)[written],
-					    msg->total_len(msg) - written,
+			read = snprintf(buffer, sizeof(buffer) - 1,
 					    "\t\t}, {\n");
-		}else {
-			read = snprintf(&msg->ptr(msg)[written],
-					    msg->total_len(msg) - written,
+		} else {
+			read = snprintf(buffer, sizeof(buffer) - 1,
 					    "\t\t%s\n", token);
 		}
 
-		if ((read + written - 4) > msg->total_len(msg)) {
-			WARNING("Not all messages will be printed\n");
+		if (tot_len < (written + read)) {
+			WARNING("not all messages will be printed\n");
 			break;
 		}
+
 		written += read;
+		msg->append(msg, buffer, read);
 		token = strtok(NULL, delimiter);
+	}
+
+	if (!written) {
+		WARNING("nothing written by json child node needs checkout\n");
+		return 0;
 	}
 
 	msg->ptr(msg)[written - 4] = '\0';
@@ -144,12 +151,15 @@ static size_t form_json_print_nodes(cJSON *pnode, message_obj * const msg)
 
 	if (!data) {
 		ERROR("could not print to json\n");
-		return -1;
+		return 0;
 	}
 
-	if ((rc = strnlen(data, msg->total_len(msg) * 2)) + msg->length(msg) > msg->total_len(msg)) {
+	rc = strnlen(data, msg->total_len(msg) * 2);
+	if (rc + msg->length(msg) > msg->total_len(msg)) {
 		WARNING("Data to write is bigger than the msg's buffer, "
-		      "%ld/%ld\n", rc, msg->total_len(msg));
+		      "%ld/%ld\n", (rc + msg->length(msg)), msg->total_len(msg));
+		/* We cannot go futher, so we return an error to the calling function */
+		rc = -1 ;
 		goto buffer_failed;
 	}
 
@@ -176,25 +186,24 @@ static size_t form_json_send_data(processing_obj * const obj,
 
 	/* TODO clean this function */
 	if (!jpdata->is_nfirstrun) {
+		/* First time, we shall write data + information */
 		node = jpdata->root_benchmarking;
 		rc = form_json_print_nodes(node, msg);
 		jpdata->is_nfirstrun = 1;
 		form_json_format_init_output(msg);
 	} else {
+		/* Loop over packet node */
 		node = jpdata->ptf->root->child;
-		int i=0;
 		while (node) {
 			if ((err = form_json_print_nodes(node, msg)) < 0) {
-				continue;
+				return -1;
 			}
-
 			rc = err;
 			node = node->next;
 		}
 
-		if (form_json_format_child_output(msg)) {
+		if (form_json_format_child_output(msg))
 			return 0;
-		}
 	}
 
 	cJSON_Delete(jpdata->ptf->root->child);
