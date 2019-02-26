@@ -80,6 +80,7 @@ static void form_json_format_init_output(message_obj * const msg)
 
 	brace[0] = ',';
 	brace[1] = '\n';
+
 	msg->set_length(msg, msg->length(msg) - ((uintptr_t) end
 				- (uintptr_t)brace) - 1);
 }
@@ -89,6 +90,7 @@ static int form_json_format_child_output(message_obj * const msg)
 	unsigned int written = 0;
 	char *prev_token, *token, *copy, *temp;
 	char *delimiter = "\n";
+	size_t read;
 	unsigned int pos = 0;
 
 	if (!(temp = strndup(msg->ptr(msg), MESSAGE_BUFFER_SZ_MAX - 1))) {
@@ -105,19 +107,24 @@ static int form_json_format_child_output(message_obj * const msg)
 		pos = token - temp;//+ strnlen(temp, MESSAGE_BUFFER_SZ_MAX - pos);
 
 		if (copy[pos] == '{') {
-			written += snprintf(&msg->ptr(msg)[written],
+			read = snprintf(&msg->ptr(msg)[written],
 					    msg->total_len(msg) - written,
 					    ", %s\n", token);
 		} else if (copy[pos] == '}') {
-			written += snprintf(&msg->ptr(msg)[written],
+			read = snprintf(&msg->ptr(msg)[written],
 					    msg->total_len(msg) - written,
 					    "\t\t}, {\n");
 		}else {
-			written += snprintf(&msg->ptr(msg)[written],
+			read = snprintf(&msg->ptr(msg)[written],
 					    msg->total_len(msg) - written,
 					    "\t\t%s\n", token);
 		}
 
+		if ((read + written - 4) > msg->total_len(msg)) {
+			WARNING("Not all messages will be printed\n");
+			break;
+		}
+		written += read;
 		token = strtok(NULL, delimiter);
 	}
 
@@ -140,8 +147,8 @@ static size_t form_json_print_nodes(cJSON *pnode, message_obj * const msg)
 		return -1;
 	}
 
-	if ((rc = strnlen(data, msg->total_len(msg) * 2)) > msg->total_len(msg)) {
-		ERROR("Data to write is bigger than the msg's buffer, "
+	if ((rc = strnlen(data, msg->total_len(msg) * 2)) + msg->length(msg) > msg->total_len(msg)) {
+		WARNING("Data to write is bigger than the msg's buffer, "
 		      "%ld/%ld\n", rc, msg->total_len(msg));
 		goto buffer_failed;
 	}
@@ -178,7 +185,7 @@ static size_t form_json_send_data(processing_obj * const obj,
 		int i=0;
 		while (node) {
 			if ((err = form_json_print_nodes(node, msg)) < 0) {
-				return -1;
+				continue;
 			}
 
 			rc = err;
