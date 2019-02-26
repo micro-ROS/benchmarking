@@ -172,7 +172,6 @@ static size_t file_write(processing_obj * const obj, message_obj * const msg)
 
 	while ((n = write(pdata->fd, &buf[written], length - written)) >= 0) {
 		written += n;
-		printf("wrotten from &buf[readd]=%p %ld/%ld \n", &buf[written], n, length);
 		if (written >= length)
 			break;
 	}
