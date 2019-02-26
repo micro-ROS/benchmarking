@@ -69,7 +69,7 @@ static const swd_ctrl_config *swd_ctrl_get_cfg(const char *name,
 
 	if (!name) {
 		ERROR("Cannot find null cfg name\n");
-		return NULL
+		return NULL;
 	}
 
 	for (unsigned int i=0; i<ARRAY_SIZE(swd_ctrl_cfgs);i++) {
