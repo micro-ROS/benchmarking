@@ -320,7 +320,7 @@ static inline void handle_pc_value_pkt_value(const union libswo_packet *pkt,
 					   void *data)
 {
 	unsigned int *data_u = (unsigned int *) data;
-	*data_u = (pkt->pc_sample.pc);
+	*data_u = (pkt->pc_value.pc);
 }
 
 static inline void handle_pc_value_pkt_comp(const union libswo_packet *pkt,
