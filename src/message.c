@@ -149,7 +149,7 @@ static void message_set_length_buffer(const message_obj * const obj, size_t len)
 {
 	message_priv_data *pdata = (message_priv_data *) obj->pdata;
 	if (len > pdata->total_len)
-		WARNING("set length bigger than the actual buffer\n");
+		WARNING("set length bigger than the actual buffer allocating %ld/%ld\n", len, pdata->total_len);
 
 	pdata->length = len;
 }
@@ -190,6 +190,8 @@ static message_priv_data *message_get_free_instance(void)
 		if (!message_instances[i].is_used) {
 			pdata = &message_instances[i];
 			pdata->is_used = true;
+			pdata->total_len = MESSAGE_BUFFER_SZ_MAX;
+			pdata->length = 0;
 			break;
 		}
 		i++;
@@ -229,6 +231,7 @@ int message_init(message_obj * const obj)
 	obj->total_len = message_totlen_buffer;
 	obj->cpy = message_cpy_buffer;
 	obj->ptr = message_ptr_buffer;
+
 
 
 	return 0;
