@@ -100,13 +100,16 @@ static int pipeline_stream_data(pipeline_obj * const obj)
 	for (unsigned int i=0; i<(pdata->count-1); i++) {
 		DEBUG("Data incoming from element %d\n", i);
 		msg->set_length(msg, 0);
+		memset(msg->ptr(msg), 0, msg->total_len(msg));
 		if ((rc = pdata->proc_objs[i]->data_out(pdata->proc_objs[i], msg) <= 0)) {
-			break;
+			if (!pdata->stop)
+				break;
 		}
 
 		DEBUG("Data passed to the next element %d\n", i);
 		if ((rc = pdata->proc_objs[i+1]->data_in(pdata->proc_objs[i+1], msg) < 0)) {
-			break;
+			if (!pdata->stop)
+				break;
 		}
 	}
 
@@ -134,7 +137,6 @@ static pipeline_private_data *pipeline_get_instance()
 	memset(&pipeline_pdata, 0, sizeof(pipeline_pdata));
 	return  &pipeline_pdata;
 }
-
 
 int pipeline_init(pipeline_obj *obj)
 {
