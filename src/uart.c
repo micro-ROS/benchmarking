@@ -89,6 +89,7 @@ static int uart_get_instance(uart_obj * const uart)
 		if (!uarts_instances[i].is_used) {
 			uart->pdata = (void *) &uarts_instances[i];
 			uarts_instances[i].is_used = true;
+			memset(&uarts_instances[i].tty, 0, sizeof(struct termios));
 			rc = 0;
 			break;
 		}
@@ -115,7 +116,10 @@ static int uart_set_baudrate(uart_obj * const uart, unsigned int baudrate)
                 return -1;
         }
 
+	cfmakeraw(&uartpd->tty);
 	cfsetspeed (&uartpd->tty, baudrate);
+	uartpd->tty.c_cflag=CS8|CREAD|CLOCAL;           // 8n1, see termios.h for more information
+
         if (tcsetattr (uartpd->pfd.fd, TCSANOW, &uartpd->tty) != 0)
         {
                 ERROR("error %d from tcsetattr", errno);
@@ -194,7 +198,7 @@ static int uart_debug_table(const char * const buffer, size_t len,
  * \param obj: UART object reference.
  * \param msg: message object where data is going to be receive.
  */
-size_t uart_receive(processing_obj * const obj, message_obj * const msg)
+static size_t uart_receive(processing_obj * const obj, message_obj * const msg)
 {
 	uart_obj * const uart = (uart_obj * const) obj;
 	uart_private_data * const pdata = (uart_private_data *) uart->pdata;
@@ -229,7 +233,6 @@ size_t uart_receive(processing_obj * const obj, message_obj * const msg)
 		n+=readd;
 	}
 
-	DEBUG("Read %ld\n", n);
 	msg->write(msg, ptr, n);
 
 	return n;
