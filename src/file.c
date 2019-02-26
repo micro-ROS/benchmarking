@@ -62,13 +62,13 @@ static int file_free_instance(file_obj * const obj)
 	file_priv_data *pdata = (file_priv_data *) obj->pdata;
 
 	if (!pdata->is_used) {
-		ERROR("The object was not initialized corretly\n");	
+		ERROR("The object was not initialized corretly\n");
 		return -1;
 	}
 
 	memset(pdata, 0, sizeof(*pdata));
 	obj->pdata = NULL;
-	
+
 	return 0;
 }
 
@@ -78,7 +78,7 @@ static int file_set_path(file_obj * const obj, const char * const path,
 	file_priv_data *pdata = (file_priv_data *) obj->pdata;
 
 	if (!pdata->is_used) {
-		ERROR("The object was not initialized corretly\n");	
+		ERROR("The object was not initialized corretly\n");
 		return -1;
 	}
 
@@ -120,7 +120,7 @@ static int file_open(file_obj * const obj)
 	if (rc < 0) {
 		ERROR("While opening file %s\n", strerror(errno));
 		return -1;
-	} 
+	}
 
 	pdata->is_open = true;
 	pdata->fd = rc;
@@ -133,7 +133,7 @@ static int file_close(file_obj * const obj)
 	file_priv_data *pdata = (file_priv_data *) obj->pdata;
 
 	if (!pdata->is_used) {
-		ERROR("The object was not initialized corretly\n");	
+		ERROR("The object was not initialized corretly\n");
 		return -1;
 	}
 
@@ -148,28 +148,42 @@ static int file_close(file_obj * const obj)
 	return 0;
 }
 
+
+static void print_table_file(char *info, unsigned char *ptr, size_t len)
+{
+#if 1
+	printf("%s\n", info);
+	for (unsigned int i = 0; i < len; i++) {
+		if (!(i%32)) printf("\n");
+
+		printf("%02x ", ptr[i]);
+	}
+	printf("\n");
+#endif
+}
+
 static size_t file_write(processing_obj * const obj, message_obj * const msg)
 {
 	file_obj *f_obj = (file_obj *) obj;
 	file_priv_data *pdata = (file_priv_data *) f_obj->pdata;
 	char *buf = msg->ptr(msg);
 	size_t length = msg->length(msg);
-	size_t n, readd = 0;
+	size_t n, written = 0;
 
-	while ((n = write(pdata->fd, &buf[readd], length - readd) >= 0)) {
-		readd += n;
-		if (readd == n) 
+	while ((n = write(pdata->fd, &buf[written], length - written)) >= 0) {
+		written += n;
+		printf("wrotten from &buf[readd]=%p %ld/%ld \n", &buf[written], n, length);
+		if (written >= length)
 			break;
 	}
-	
-	fsync(pdata->fd);
-	return readd;
+
+	return written;
 }
 
 int file_init(file_obj * const obj)
 {
 	processing_obj *proc_obj = (processing_obj *) obj;
-	
+
 	memset(obj, 0, sizeof(*obj));
 	if (file_get_instance(obj)) {
 		goto free_instance_failed;
@@ -197,7 +211,7 @@ int file_clean(file_obj * const obj)
 {
 	processing_obj *proc_obj = (processing_obj *) obj;
 	file_priv_data *pdata = (file_priv_data *) obj->pdata;
-	
+
 	if (!pdata->is_used) {
 		ERROR("Cannot clean uninitilized \n");
 		return -1;
