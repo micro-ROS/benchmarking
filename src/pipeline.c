@@ -80,7 +80,7 @@ static int pipeline_stream_data(pipeline_obj * const obj)
 {
 	pipeline_private_data * const pdata =
 			(pipeline_private_data * const ) obj->pdata;
-	message_obj *msg = &pdata->msg;
+	message_obj * const msg = &pdata->msg;
 	size_t rc = 0;
 
 
