@@ -1,13 +1,13 @@
 ACLOCAL_AMFLAGS = -I m4
 
-CFLAGS="-g -O0"
-CXXFLAGS="-g -O0"
+CFLAGS="-g -O2"
+CXXFLAGS="-g -O2"
 
 SUBDIRS= src \
  	 apps
 
 
-clean-local:
+maintainer-clean-local:
 	rm -rf @ac_list_folder_ext@
 
 
