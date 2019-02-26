@@ -148,20 +148,6 @@ static int file_close(file_obj * const obj)
 	return 0;
 }
 
-
-static void print_table_file(char *info, unsigned char *ptr, size_t len)
-{
-#if 1
-	printf("%s\n", info);
-	for (unsigned int i = 0; i < len; i++) {
-		if (!(i%32)) printf("\n");
-
-		printf("%02x ", ptr[i]);
-	}
-	printf("\n");
-#endif
-}
-
 static size_t file_write(processing_obj * const obj, message_obj * const msg)
 {
 	file_obj *f_obj = (file_obj *) obj;
