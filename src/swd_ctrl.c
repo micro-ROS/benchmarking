@@ -28,26 +28,27 @@ static const char *swd_ctrl_config_gbl[CFG_CPU+1] = {
 						CFG_SECTION_SWD_CTRL_CPU
 					};
 
+/**
+ * Order matter, so if you want your config to predominate over
+ * another general configuration, then put your configuration
+ * before the general one 
+ */
 static const swd_ctrl_config swd_ctrl_cfgs[] = {
 			{
 				.type = CFG_INTERFACE,
 				.cfg_name = "stlink-v2",
 				.cmd = "-f" SWD_CTRL_OPENOCD_INTERFACE_PATH"/stlink-v2.cfg",
 			},
-#if 1
 			{
 				.type = CFG_CPU,
 				.cfg_name = "stm32f407",
 				.cmd = "-f" SWD_CTRL_OPENOCD_CPU_PATH"/stm32f407.cfg",
 			},
-#endif
-#if 0
 			{
 				.type = CFG_CPU,
 				.cfg_name = "stm32f4*",
 				.cmd = "-f" SWD_CTRL_OPENOCD_CPU_PATH"/stm32f4x.cfg",
 			},
-#endif
 };
 
 typedef struct {
@@ -63,8 +64,13 @@ static swd_ctrl_priv_data swd_ctrl_pdata;
 static const swd_ctrl_config *swd_ctrl_get_cfg(const char *name,
 					       enum config_type type)
 {
-	char cfg[CONFIG_STR_LEN_MAX];
-	const char *match;
+	char cfg[CONFIG_STR_LEN_MAX] = "";
+	const char *match = NULL;
+
+	if (!name) {
+		ERROR("Cannot find null cfg name\n");
+		return NULL
+	}
 
 	for (unsigned int i=0; i<ARRAY_SIZE(swd_ctrl_cfgs);i++) {
 		if (type != swd_ctrl_cfgs[i].type)
