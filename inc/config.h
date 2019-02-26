@@ -10,14 +10,14 @@
 /** This is */
 #define MESSAGE_NSTANCES_CNT_MAX	32
 /** This is */
-#define MESSAGE_BUFFER_SZ_MAX		8096
+#define MESSAGE_BUFFER_SZ_MAX		16384
 
 #endif
 
 #define STRING_MAX_LENGTH		255
 
 /** Used in the uart receive callback */
-#define UART_INTERNAL_BUF_LEN_MAX	64
+#define UART_INTERNAL_BUF_LEN_MAX	128
 
 /** The maximum length of the string */
 #define CONFIG_STR_LEN_MAX		512
