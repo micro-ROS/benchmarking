@@ -27,8 +27,8 @@ static void default_packet_handler(const union libswo_packet *packet,
 	if (packet->type == LIBSWO_PACKET_TYPE_DWT_PC_SAMPLE ||
 		packet->type == LIBSWO_PACKET_TYPE_DWT_PC_VALUE)
 
-		DEBUG("Message %d, %s \n", c, s);
 #endif
+		DEBUG("Message %d, %s \n", c, s);
 }
 
 
@@ -71,7 +71,7 @@ static int packet_cb(struct libswo_context *ctx,
 	decoder_swo_priv_data *pdata =
 		(decoder_swo_priv_data *) user_data;
 
-#if 0
+#if 1
 	if (!((1 << LIBSWO_PACKET_TYPE_DWT_PC_SAMPLE | 1 << LIBSWO_PACKET_TYPE_DWT_PC_VALUE)
 	& (1 << packet->type)))
 		return true;
@@ -122,7 +122,7 @@ static size_t decoder_swo_data_in(processing_obj * const obj,
 	}
 	pdata->tot_packet_decoded += pdata->cur_packet_decoded;
 	DEBUG("decoded %d\n", pdata->cur_packet_decoded);
-	DEBUG("total size decoded %d\n",
+	DEBUG("total size decoded %ld\n",
 			pdata->cur_packet_decoded* sizeof (union libswo_packet));
 	DEBUG("Total number of decoded packet %d\n", pdata->tot_packet_decoded);
 	return pdata->cur_packet_decoded * sizeof (union libswo_packet);
@@ -136,7 +136,6 @@ static size_t decoder_swo_data_out(processing_obj * const obj,
 	message_obj *msg_internal = &pdata->msg;
 	unsigned int __packet_decoded ;
 
-	memset(msg->ptr(msg), 0, msg->total_len(msg));
 	msg->write(msg, (void *) packets_decoded,
 	       pdata->cur_packet_decoded * sizeof (union libswo_packet));
 #if 0
