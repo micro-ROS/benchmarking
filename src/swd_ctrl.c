@@ -245,7 +245,7 @@ int swd_ctrl_fini(swd_ctrl_obj * const obj)
 {
 	swd_ctrl_priv_data *pdata = (swd_ctrl_priv_data *) obj->pdata;
 
-	if (pdata->is_init) {
+	if (!pdata->is_init) {
 		ERROR("Cannot deinit this swd obj twice\n");
 		return -1;
 	}
