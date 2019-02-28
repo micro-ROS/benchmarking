@@ -244,6 +244,7 @@ int main(int argc, char **argv)
 	form_obj	cjson_proc;
 	decoder_swo_obj	decoder_proc;
 	file_obj 	file_sink;
+	processing_obj *proc;
 
 	pipeline_obj	pipeline;
 
@@ -259,6 +260,15 @@ int main(int argc, char **argv)
 	decoder_init_decoder_swo(&decoder_proc);
 	decoder_init_form_cjson(&cjson_proc);
 	decoder_init_file_sink(&file_sink);
+
+	proc = (processing_obj *) &uart_src;
+	proc->register_element(proc, (processing_obj *) &decoder_proc);
+
+	proc = (processing_obj *) &decoder_proc;
+	proc->register_element(proc, (processing_obj *) &cjson_proc);
+
+	proc = (processing_obj *) &cjson_proc;
+	proc->register_element(proc, (processing_obj *) &file_sink);
 
 	if (swd_ctrl.start(&swd_ctrl, argv[0])) {
 		exit(EXIT_FAILURE);

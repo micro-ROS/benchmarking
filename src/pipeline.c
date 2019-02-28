@@ -12,7 +12,8 @@ typedef struct {
 	processing_obj *proc_objs[16];
 	/** The number of in use objs */
 	unsigned int count;
-	message_obj msg;
+	message_obj parent_msg;
+	message_obj child_msg;
 	bool is_sink_connected;
 	bool is_src_connected;
 	bool is_used;
@@ -76,13 +77,12 @@ static int pipeline_attach_sink(pipeline_obj * const obj, processing_obj * const
 	pdata->count++;
 }
 
-static int pipeline_stream_data(pipeline_obj * const obj)
+int pipeline_stream_data(pipeline_obj * const obj)
 {
 	pipeline_private_data * const pdata =
 			(pipeline_private_data * const ) obj->pdata;
-	message_obj * const msg = &pdata->msg;
-	size_t rc = 0;
 
+	processing_obj *el = pdata->proc_objs[0];
 
 	if (pdata->count < 2) {
 		ERROR("The pipeline is incomplete\n");
@@ -91,29 +91,13 @@ static int pipeline_stream_data(pipeline_obj * const obj)
 
 	if (stop_pipelines) {
 		DEBUG("Requesting to end pipeline and processing elements\n");
-		for (unsigned int j=0; j<(pdata->count); j++) {
+		for (unsigned int j = 0; j < pdata->count; j++) {
 			pdata->proc_objs[j]->req_end = true;
 		}
 		pdata->stop = true;
 	}
 
-	for (unsigned int i=0; i<(pdata->count-1); i++) {
-		DEBUG("Data incoming from element %d\n", i);
-		msg->set_length(msg, 0);
-		memset(msg->ptr(msg), 0, msg->total_len(msg));
-		if ((rc = pdata->proc_objs[i]->data_out(pdata->proc_objs[i], msg) <= 0)) {
-			if (!pdata->stop)
-				break;
-		}
-
-		DEBUG("Data passed to the next element %d\n", i);
-		if ((rc = pdata->proc_objs[i+1]->data_in(pdata->proc_objs[i+1], msg) < 0)) {
-			if (!pdata->stop)
-				break;
-		}
-	}
-
-	return rc;
+	return pdata->proc_objs[0]->execute_out(pdata->proc_objs[0]);
 }
 
 static bool pipeline_get_stop(pipeline_obj *obj)
@@ -125,7 +109,7 @@ static bool pipeline_get_stop(pipeline_obj *obj)
 }
 
 void pipeline_set_end_all(void) {
-	
+
 	stop_pipelines = true;
 }
 
@@ -147,7 +131,11 @@ int pipeline_init(pipeline_obj *obj)
 		return -1;
 	}
 
-	if (message_init(&pdata->msg)) {
+	if (message_init(&pdata->parent_msg)) {
+		return -1;
+	}
+
+	if (message_init(&pdata->child_msg)) {
 		return -1;
 	}
 
