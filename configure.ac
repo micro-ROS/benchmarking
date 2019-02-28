@@ -33,10 +33,11 @@ LT_INIT
 CFLAGS="-g -O2"
 LTCFLAGS="$CFLAGS"
 
-# do AC_CHECK_HEADERS
+#Replace
 top_abs_path=`(pwd)`
 ac_list_folder_ext=`(for i in $(ls -d ext/*/); do printf "$i ";  done)`
 
+AC_SUBST([top_abs_path])
 AC_SUBST([ac_list_folder_ext])
 
 ### Configuration for openocd
@@ -73,6 +74,6 @@ AC_ARG_ENABLE([libini],
 AS_IF([test "x$enable_libini" != "xno"], [
 	AC_DEFINE([CONFIG_LIBINI], [], [Activate libini])
 ])
-AC_CONFIG_FILES([Makefile src/Makefile apps/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile apps/Makefile tools/generic-paths.sh])
 AC_OUTPUT
 
