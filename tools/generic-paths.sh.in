@@ -1,0 +1,3 @@
+#!/bin/sh
+
+TOP_DIR=@top_abs_path@
