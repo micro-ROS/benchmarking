@@ -72,7 +72,7 @@ typedef struct  {
 	struct pollfd pfd;
 	/** If used (init was called) */
 	bool is_used;
-	/** If used (open was called) */
+	/** If open (open was called) */
 	bool is_open;
 	/** Manage multi thread concurency */
 } uart_private_data;
