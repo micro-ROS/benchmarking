@@ -35,9 +35,18 @@
 /* Configuration */
 #ifdef CONFIG_LIBINI
 
+/* Section SWD CTRL */
 #define CFG_SECTION_SWD_CTRL		"swd-ctrl"
+
+/* Configuration regarding the SWD module */
 #define CFG_SECTION_SWD_CTRL_IF		"name_interface"
 #define CFG_SECTION_SWD_CTRL_CPU	"name_cpu"
+
+/* Section EXT BINS */
+#define CFG_SECTION_EXT_BIN		"ext-bins"
+
+/* Nedded by the execution perfomance module (perf_ex.c) */
+#define CFG_SECTION_EXT_BIN_TC		"toolchain_name"
 
 #else /* CONFIG_LIBINI */
 
