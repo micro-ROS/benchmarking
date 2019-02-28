@@ -1,6 +1,6 @@
 AC_INIT([uROS-Benchmarking], [0.0.1], [amalki@piap.pl], [libbenchmark])
 AC_PREREQ([2.68])
-AM_INIT_AUTOMAKE([-Wall -Werror])
+AM_INIT_AUTOMAKE([-Wall -Werror subdir-objects])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([inc/config_lib.h])
 
@@ -25,6 +25,8 @@ AC_CHECK_HEADERS([sys/time.h])
 AC_CHECK_HEADERS([sys/inttypes.h])
 AC_CHECK_HEADERS([sys/types.h])
 AC_CHECK_HEADERS([unistd.h])
+
+PKG_CHECK_MODULES([CHECK], [check])
 
 #Initialize libtool
 LT_PREREQ([2.4])
