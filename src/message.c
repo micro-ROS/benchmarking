@@ -172,7 +172,7 @@ static char *message_ptr_buffer(const message_obj * const obj)
  * 		is copied.
  */
 static size_t message_cpy_buffer(message_obj * const obj,
-			       message_obj * const src)
+			         message_obj * const src)
 {
 	return message_write_buffer(obj, src->ptr(src), src->length(src));
 }
@@ -190,8 +190,6 @@ static message_priv_data *message_get_free_instance(void)
 		if (!message_instances[i].is_used) {
 			pdata = &message_instances[i];
 			pdata->is_used = true;
-			pdata->total_len = MESSAGE_BUFFER_SZ_MAX;
-			pdata->length = 0;
 			break;
 		}
 		i++;
@@ -231,8 +229,6 @@ int message_init(message_obj * const obj)
 	obj->total_len = message_totlen_buffer;
 	obj->cpy = message_cpy_buffer;
 	obj->ptr = message_ptr_buffer;
-
-
 
 	return 0;
 internal_init_failed:
