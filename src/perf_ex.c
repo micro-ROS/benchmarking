@@ -49,7 +49,7 @@ typedef struct {
 	" -e/home/amalki/prjs/microROS/soft/embedded_soft/baremetal_tests/baremetal-stm32f4/main.elf" \
 	" -f %d"
 
-#define PERF_EX_SSCANF_FORMAT "%s\n%*s:%*u"
+#define PERF_EX_SSCANF_FORMAT "%s\n%s:%u"
 static perf_ex_private_data perf_ex_priv_data;
 
 /**
@@ -64,8 +64,8 @@ perf_ex_data_in(processing_obj * const obj, message_obj *const msg)
 	union libswo_packet *packets = (union libswo_packet *) msg->ptr(msg);
 	unsigned int pkt_count = msg->length(msg) / sizeof (union libswo_packet);
 	size_t readd = 0;
+	unsigned int line;
 	FILE *f_popen;
-	char output[128];
 	char function[32];
 	char file[512];
 
@@ -79,9 +79,7 @@ perf_ex_data_in(processing_obj * const obj, message_obj *const msg)
 		return -1;
 	}
 
-	DEBUG("Number of packet %d\n", pkt_count);
 	for (unsigned int i = 0; i < pkt_count; i++) {
-		DEBUG("Processing packet %d/%d\n", i, pkt_count);
 		snprintf(pdata->path_cmd, sizeof(pdata->path_cmd) - 1,
 				PERF_EX_ADDR2LINE_CMD, pdata->toolchain, 
 				packets[i].pc_value.pc);
@@ -91,16 +89,24 @@ perf_ex_data_in(processing_obj * const obj, message_obj *const msg)
 			return -1;
 		}
 
-		memset(output, 0, sizeof(output));	
-		while (!(readd += fread(output, 1, sizeof(output), f_popen))) {
-			if (!sscanf(output, PERF_EX_SSCANF_FORMAT, function)) {
-				ERROR("Invalid output\n");
-				return -1;
+		readd += fscanf(f_popen, PERF_EX_SSCANF_FORMAT, function, file, 
+				&line);
+		if (EOF == readd) {
+			if (ferror(f_popen)) {
+				ERROR("Error while opening reading output of "
+					"cmd %s\n", pdata->path_cmd);
 			}
 		}
-		DEBUG("Executed \n %s\n", output);
+
+		if (!strncmp(function, "??", sizeof(function) - 1)) {
+			WARNING("Cannot find function at address %x\n",
+				 packets[i].pc_value.pc);
+			continue;	
+		}
+
 		if (pclose(f_popen)) {
-			ERROR("Error while executing %s %s\n", pdata->path_cmd, output);
+			ERROR("Error while executing %s\n", pdata->path_cmd);
+			return -1;
 		}
 	}
 
