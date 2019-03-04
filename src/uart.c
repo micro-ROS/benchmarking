@@ -117,8 +117,12 @@ static int uart_set_baudrate(uart_obj * const uart, unsigned int baudrate)
         }
 
 	cfmakeraw(&uartpd->tty);
-	cfsetspeed (&uartpd->tty, baudrate);
-	uartpd->tty.c_cflag=CS8|CREAD|CLOCAL;           // 8n1, see termios.h for more information
+//	cfsetspeed (&uartpd->tty, baudrate);
+	uartpd->tty.c_cflag= baudrate|CS8|CREAD|CLOCAL;           // 8n1, see termios.h for more information
+	uartpd->tty.c_cflag &= ~PARENB;
+	uartpd->tty.c_cflag &= ~CSTOPB;
+	uartpd->tty.c_cflag &= ~CSIZE;
+	uartpd->tty.c_cflag |= CS8;
 
         if (tcsetattr (uartpd->pfd.fd, TCSANOW, &uartpd->tty) != 0)
         {
