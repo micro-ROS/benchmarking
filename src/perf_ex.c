@@ -396,7 +396,7 @@ static int perf_ex_set_tc_gbl_config_default(perf_ex_obj * const obj)
 /**
  * \brief TODO
  */
-int perf_ex_init(perf_ex_obj *obj)
+int perf_ex_init(perf_ex_obj * const obj)
 {
 	processing_obj *proc_obj = (processing_obj *) obj;
 	perf_ex_private_data *pdata;
@@ -429,7 +429,7 @@ int perf_ex_init(perf_ex_obj *obj)
 /**
  * \brief TODO
  */
-int perf_ex_fini(perf_ex_obj *obj)
+int perf_ex_fini(perf_ex_obj * const obj)
 {
 	perf_ex_private_data *pdata =
 				(perf_ex_private_data *) obj->pdata;
