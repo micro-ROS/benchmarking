@@ -46,7 +46,8 @@
 #define CFG_SECTION_EXT_BIN		"ext-bins"
 
 /* Nedded by the execution perfomance module (perf_ex.c) */
-#define CFG_SECTION_EXT_BIN_TC		"toolchain_name"
+#define CFG_SECTION_EXT_BIN_TC		"path_toolchain"
+#define CFG_SECTION_EXT_BIN_ELF		"path_elf"
 
 #else /* CONFIG_LIBINI */
 
