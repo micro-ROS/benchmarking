@@ -167,6 +167,7 @@ void decoder_init_perf_ex(perf_ex_obj *perf)
 	}
 
 	perf->set_tc_gbl_config(perf);
+	perf->set_elf_gbl_config(perf);
 }
 
 int decoder_init_file_perf(file_obj *file_f)
