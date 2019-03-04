@@ -8,6 +8,7 @@
 #include <decoder_swo.h>
 #include <form.h>
 #include <file.h>
+#include <perf_ex.h>
 #include <pipeline.h>
 #include <processing.h>
 #include <uart.h>
@@ -158,20 +159,59 @@ void decoder_init_decoder_swo(decoder_swo_obj *dec)
 	DEBUG("decoder swo initialized...\n");
 }
 
-int decoder_init_file_sink(file_obj *file_f)
+void decoder_init_perf_ex(perf_ex_obj *perf)
+{
+	memset(perf, 0, sizeof(*perf));
+	if (perf_ex_init(perf)) {
+		exit(EXIT_FAILURE);
+	}
+
+	perf->set_tc_gbl_config(perf);
+}
+
+int decoder_init_file_perf(file_obj *file_f)
 {
 	cfg_param file_cfg = {
-		.section = "output-file",
+		.section = "output-files",
 	};
 
-	DEBUG("initializing file sink...\n");
+	DEBUG("initializing file sink perf...\n");
 
 	memset(file_f, 0, sizeof(*file_f));
 	if (file_init(file_f)) {
 		exit(EXIT_FAILURE);
 	}
 
-	file_cfg.name = "path";
+	file_cfg.name = "path-perf";
+	file_cfg.type = CONFIG_STR;
+	if (file_f->file_set_path(file_f,
+				CONFIG_HELPER_GET_STR(&file_cfg),
+			        FILE_WRONLY)) {
+		exit(EXIT_FAILURE);
+	}
+
+	if (file_f->file_init(file_f)) {
+		exit(EXIT_FAILURE);
+	}
+
+	DEBUG("file sink initialized.\n");
+	return 0;
+}
+
+int decoder_init_file_json(file_obj *file_f)
+{
+	cfg_param file_cfg = {
+		.section = "output-files",
+	};
+
+	DEBUG("initializing file sink json...\n");
+
+	memset(file_f, 0, sizeof(*file_f));
+	if (file_init(file_f)) {
+		exit(EXIT_FAILURE);
+	}
+
+	file_cfg.name = "path-json";
 	file_cfg.type = CONFIG_STR;
 	if (file_f->file_set_path(file_f,
 				CONFIG_HELPER_GET_STR(&file_cfg),
@@ -231,9 +271,19 @@ static void decoder_fini_form_cjson(form_obj *cjson)
 	form_cjson_fini(cjson);
 }
 
-static void decoder_fini_file_sink(file_obj *file_p)
+static void decoder_fini_file_json(file_obj *file_p)
 {
 	file_p->file_fini(file_p);
+}
+
+static void decoder_fini_file_perf(file_obj *file_p)
+{
+	file_p->file_fini(file_p);
+}
+
+static void decoder_fini_perf_ex(perf_ex_obj *perf)
+{
+	perf_ex_fini(perf);
 }
 
 int main(int argc, char **argv)
@@ -242,8 +292,10 @@ int main(int argc, char **argv)
 	swd_ctrl_obj	swd_ctrl;
 	uart_obj	uart_src;
 	form_obj	cjson_proc;
+	perf_ex_obj	perf_proc;
 	decoder_swo_obj	decoder_proc;
-	file_obj 	file_sink;
+	file_obj 	file_json;
+	file_obj 	file_perf;
 	processing_obj *proc;
 
 	pipeline_obj	pipeline;
@@ -259,16 +311,22 @@ int main(int argc, char **argv)
 	decoder_init_uart(&uart_src);
 	decoder_init_decoder_swo(&decoder_proc);
 	decoder_init_form_cjson(&cjson_proc);
-	decoder_init_file_sink(&file_sink);
+	decoder_init_perf_ex(&perf_proc);
+	decoder_init_file_json(&file_json);
+	decoder_init_file_perf(&file_perf);
 
 	proc = (processing_obj *) &uart_src;
 	proc->register_element(proc, (processing_obj *) &decoder_proc);
 
 	proc = (processing_obj *) &decoder_proc;
 	proc->register_element(proc, (processing_obj *) &cjson_proc);
+	proc->register_element(proc, (processing_obj *) &perf_proc);
+
+	proc = (processing_obj *) &perf_proc;
+	proc->register_element(proc, (processing_obj *) &file_perf);
 
 	proc = (processing_obj *) &cjson_proc;
-	proc->register_element(proc, (processing_obj *) &file_sink);
+	proc->register_element(proc, (processing_obj *) &file_json);
 
 	if (swd_ctrl.start(&swd_ctrl, argv[0])) {
 		exit(EXIT_FAILURE);
@@ -281,7 +339,9 @@ int main(int argc, char **argv)
 	pipeline.attach_src(&pipeline, (processing_obj *) &uart_src);
 	pipeline.attach_proc(&pipeline, (processing_obj *) &decoder_proc, NULL);
 	pipeline.attach_proc(&pipeline, (processing_obj *) &cjson_proc, NULL);
-	pipeline.attach_sink(&pipeline, (processing_obj *) &file_sink);
+	pipeline.attach_sink(&pipeline, (processing_obj *) &perf_proc);
+	pipeline.attach_sink(&pipeline, (processing_obj *) &file_perf);
+	pipeline.attach_sink(&pipeline, (processing_obj *) &file_json);
 
 
 	while (!pipeline.is_stopped(&pipeline)) {
@@ -290,11 +350,13 @@ int main(int argc, char **argv)
 		}
 	}
 
-	decoder_fini_file_sink(&file_sink);
 	decoder_fini_form_cjson(&cjson_proc);
 	decoder_fini_decoder_swo(&decoder_proc);
 	decoder_fini_uart(&uart_src);
 	decoder_fini_swd_ctrl(&swd_ctrl);
+	decoder_fini_perf_ex(&perf_proc);
+	decoder_fini_file_perf(&file_perf);
+	decoder_fini_file_json(&file_json);
 	decoder_fini_config(&cfgini);
 
 	DEBUG("Ending gracefully\n");
