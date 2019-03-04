@@ -30,15 +30,16 @@ static int processing_reg_readder_default(processing_obj * const obj,
 static int processing_reg_reader(processing_obj * const obj,
 				 processing_obj * const el)
 {
-	processing_obj *next_child;
+	processing_obj *next_child, *prev_child = NULL;
 
 	if (obj->child) {
-		next_child = obj->child->next;
+		next_child = obj->child;
 		while (next_child) {
+			prev_child = next_child;
 			next_child = next_child->next;
 		}
 
-		next_child->next = el;
+		prev_child->next = el;
 	} else {
 		obj->child = el;
 	}
@@ -74,7 +75,7 @@ static int processing_execute_out(processing_obj * const obj)
 		}
 
 		/* Dive deeper */
-		if (next_child->execute_out(next_child) < 0) {
+		if (next_child->execute_out(next_child) < (size_t) 0) {
 			return -1;
 		}
 
