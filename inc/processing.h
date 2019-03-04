@@ -34,6 +34,10 @@ struct processing_obj_st {
 	/* Internal message */
 	message_obj			msg;
 	bool				req_end;
+	/** This will happen when the one processing element needs to send
+	 * more data than the tranmit buffer can hold.
+	 */
+	bool				req_send_more;
 	/* Child object */
 	processing_obj			*child;
 	/* Same level */
