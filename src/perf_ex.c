@@ -32,6 +32,7 @@ struct exe_info_list_st {
 	char			file_path[1024];
 	char			function_name[128];
 
+	unsigned int		hits;
 	exe_line_info		*line_first;
 	exe_line_info		*line_last;
 };
@@ -48,6 +49,7 @@ typedef struct {
 	char path_cmd[1024];
 	bool is_init;
 
+	unsigned int  total_samples;
 	exe_info_list *head;
 } perf_ex_private_data;
 
@@ -58,6 +60,12 @@ typedef struct {
 	" -f 0x%x"
 
 #define PERF_EX_SSCANF_FORMAT "%s\n%[^:]:%u"
+
+#define PERF_EX_OUT_END_FUNC "\n]"
+#define PERF_EX_OUT_BEGIN_FUNC "\nfile: %s\nfunction: %s\n" \
+				"hits: %u\ndetails: [\n"
+#define PERF_EX_OUT_LINE "\t{ hits: %u, line: %u, address: %x},\n"
+
 static perf_ex_private_data perf_ex_priv_data;
 
 static exe_line_info *
@@ -87,19 +95,20 @@ perf_ex_find_addr_info(exe_info_list *el, unsigned int addr, unsigned int line)
 	linfo_new->addr = addr;
 
 	/* it seems like there are no first line */
-	if (!linfo_prev) {
+	if (!el->line_first) {
 		el->line_first = linfo_new;
-		el->line_last =  linfo_new;
+		el->line_last = linfo_new;
 		return linfo_new;
 	}
 
-	if (addr > linfo_prev->addr) {
+	/* In the case this is the last element of the addresses */
+	if (!linfo) {
 		linfo_prev->next = linfo_new;
 		el->line_last = linfo_new;
 	} else {
 		linfo_new->next = linfo;
 		if (linfo == el->line_first)
-			 el->line_first = linfo;
+			 el->line_first = linfo_new;
 
 		if (linfo_prev)
 			linfo_prev->next = linfo_new;
@@ -118,8 +127,12 @@ perf_ex_match_func_and_line(exe_info_list *info, const char * const function,
 	return (!cmp_func && !cmp_file);
 }
 
+/** 
+ * @brief This function will assign a structure to the function.
+ */
 static exe_info_list *
-perf_ex_update_function_info(exe_info_list *info, const char * const path,
+perf_ex_update_function_info(perf_ex_private_data *pdata, exe_info_list *info,
+				const char * const path,
 				const char * const function)
 {
 	exe_info_list *rinfo;
@@ -128,7 +141,7 @@ perf_ex_update_function_info(exe_info_list *info, const char * const path,
 		return info;
 	}
 
-	if (info->prev) {
+	if (info->next) {
 		if (perf_ex_match_func_and_line(info->prev, function, path)) {
 			return info->prev;
 		}
@@ -140,14 +153,6 @@ perf_ex_update_function_info(exe_info_list *info, const char * const path,
 		return NULL;
 	}
 
-	rinfo->prev = info->prev;
-	rinfo->next = info;
-	info->prev = rinfo;
-
-	if (info->prev) {
-		info->prev->next = rinfo;
-	}
-
 	strncpy(rinfo->file_path, path, sizeof(rinfo->file_path) - 1);
 	strncpy(rinfo->function_name, function, sizeof(rinfo->function_name) - 1);
 
@@ -155,68 +160,62 @@ perf_ex_update_function_info(exe_info_list *info, const char * const path,
 }
 
 static int
-perf_ex_find_and_update_info(exe_info_list *head, const char * const path,
+perf_ex_find_and_update_info(perf_ex_private_data *pdata, const char * const path,
 			const char * const function,  unsigned int addr,
 			unsigned int line)
 {
-	exe_info_list *info = head;
+	exe_info_list *pinfo, *info = pdata->head;
 	exe_line_info *linfo;
 	int cmp_function;
 	int cmp_path;
 	int rc = 0;
+	bool found = false;
 
 	while (info) {
 		if (!info->line_first) {
-			if (!perf_ex_find_addr_info(info, addr, line)) {
-				return -1;
-			}
-
-			if (!info->line_first) {
-				ERROR("Error while getting allocating\n");
-				rc = -1;
-				break;
-			}
-
-			info->line_last->hit++;
+			/* This is the first time this element is filled */
 			strncpy(info->file_path, path, sizeof(info->file_path) - 1);
 			strncpy(info->function_name, function, sizeof(info->function_name) - 1);
-			break;
+		} else if (info->line_first->addr > addr) {
+			info = perf_ex_update_function_info(pdata, info, path, function);
+			/* Try to find all the element that match the address and line*/
+		} else {
+			if (!perf_ex_match_func_and_line(info, function, path)) {
+				pinfo = info;
+				info = info->next;
+				continue;
+			}
 		}
 
-		if (info->line_first->addr < addr) {
-			/* Find to which function it belongs. If none creaet
-			a new exe_info_str struct */
-			info = perf_ex_update_function_info(info, path, function);
-
-			if (!info) {
-				rc = -1;
-				break;
-			}
-
-			linfo = perf_ex_find_addr_info(info, addr, line);
-			if (!linfo) {
-				rc = -1;
-				break;
-			}
-
-			linfo->hit++;
-			break;
-		}
-
-		if (info->line_last->addr > addr) {
-			linfo = perf_ex_find_addr_info(info, addr, line);
-			if (!linfo) {
-				rc = -1;
-				break;
-			}
-
-			linfo->hit++;
-			break;
-		}
-		info = info->next;
+		found = true;
+		break;
 	}
 
-	return rc;
+	if (!found) {
+		/** If we land here, this means that not element were matching the address.
+		 *  We need to create a new one
+		 */
+		info = (exe_info_list *) calloc(1, sizeof(exe_info_list));
+		if (!info) {
+			ERROR("Could not allocate memory\n");
+			return -1;
+		}
+
+		strncpy(info->file_path, path, sizeof(info->file_path) - 1);
+		strncpy(info->function_name, function, sizeof(info->function_name) - 1);
+		pinfo->next = info;
+		info->prev = pinfo;
+	}
+
+	linfo = perf_ex_find_addr_info(info, addr, line);
+	if (!linfo) {
+		return -1;
+	}
+
+	info->hits++;
+	linfo->hit++;
+
+	return 0;
 }
 
 /**
@@ -271,19 +270,75 @@ perf_ex_data_in(processing_obj * const obj, message_obj *const msg)
 			continue;
 		}
 
-
 		if (pclose(f_popen)) {
 			ERROR("Error while executing %s\n", pdata->path_cmd);
 			return -1;
 		}
 
-		if (perf_ex_find_and_update_info(pdata->head, file, function,
+		if (perf_ex_find_and_update_info(pdata, file, function,
 						 packets[i].pc_value.pc, line)) {
 			return -1;
 		}
+		pdata->total_samples++;
 	}
 
 	return readd;
+}
+
+static size_t 
+perf_ex_print_addresses(exe_info_list * info, message_obj *const msg,
+				size_t pos)
+{
+	exe_line_info *linfo = info->line_first;
+	exe_line_info *tofree;
+	size_t totlen = msg->total_len(msg);
+	size_t new_pos = 0;
+
+	while (linfo) {
+		new_pos += snprintf(&msg->ptr(msg)[pos + new_pos], totlen - pos,
+				PERF_EX_OUT_LINE, linfo->hit,
+				linfo->line, linfo->addr);
+
+		tofree = linfo;
+		linfo = linfo->next;
+		free(tofree);
+	}
+
+	info->line_first = NULL;
+	info->line_last = NULL;
+
+	return new_pos;
+}
+
+static size_t
+perf_ex_print(processing_obj * const obj, message_obj *const msg)
+{
+	perf_ex_obj * const perf = (perf_ex_obj * const) obj;
+	perf_ex_private_data *pdata =
+				(perf_ex_private_data *) perf->pdata;
+	exe_info_list *info, *tofree;
+	size_t pos = 0;
+	size_t totlen = msg->total_len(msg);
+	unsigned func_hits;
+
+	info = pdata->head;
+	while(info) {
+		pos += snprintf(&msg->ptr(msg)[pos], totlen - pos,
+				PERF_EX_OUT_BEGIN_FUNC, info->file_path,
+				info->function_name, info->hits);
+		pos += perf_ex_print_addresses(info, msg, pos);
+		pos += snprintf(&msg->ptr(msg)[pos], totlen - pos,
+				PERF_EX_OUT_END_FUNC);
+
+		tofree = info;
+		info = info->next;
+		free(tofree);
+	}
+
+	pdata->head = NULL;
+	msg->set_length(msg, pos);
+	ERROR("Message gotten %s\n", msg->ptr(msg));
+	return pos;
 }
 
 /**
@@ -292,12 +347,9 @@ perf_ex_data_in(processing_obj * const obj, message_obj *const msg)
 static size_t
 perf_ex_data_out(processing_obj * const obj, message_obj *const msg)
 {
-	perf_ex_obj * const perf = (perf_ex_obj * const) obj;
-	perf_ex_private_data *pdata =
-				(perf_ex_private_data *) perf->pdata;
-
+	
 	if (obj->req_end) {
-		return 1;
+		return perf_ex_print(obj, msg);
 	}
 
 	return 0;
@@ -390,7 +442,9 @@ int perf_ex_fini(perf_ex_obj *obj)
 	obj->set_tc_gbl_config = perf_ex_set_tc_gbl_config_default;
 	obj->set_tc = perf_ex_set_tc_default;
 
-	pdata->is_init = false;
+	if (pdata->head)
+		free(pdata->head);
 
+	pdata->is_init = false;
 	return 0;
 }
