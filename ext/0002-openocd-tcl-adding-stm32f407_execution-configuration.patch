@@ -1,19 +1,19 @@
-From b6fcb40549f9f5ea1659657aaa81c2c5bf22e298 Mon Sep 17 00:00:00 2001
+From 97fa0b5a1efab341040a5b7e3ff1f0bb6174578b Mon Sep 17 00:00:00 2001
 From: Alexandre Malki <amalki@piap.pl>
 Date: Mon, 4 Mar 2019 11:25:01 +0100
-Subject: [PATCH] tcl: adding stm32f407_execution configuration
+Subject: [PATCH] tcl: adding stm32f407_execution configuration.
 
 ---
- tcl/target/stm32f407.cfg | 122 +++++++++++++++++++++++++++++++++++++++
- 1 file changed, 122 insertions(+)
+ tcl/target/stm32f407.cfg | 123 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 123 insertions(+)
  create mode 100644 tcl/target/stm32f407.cfg
 
 diff --git a/tcl/target/stm32f407.cfg b/tcl/target/stm32f407.cfg
 new file mode 100644
-index 00000000..f54feae1
+index 00000000..c34f0447
 --- /dev/null
 +++ b/tcl/target/stm32f407.cfg
-@@ -0,0 +1,122 @@
+@@ -0,0 +1,123 @@
 +# This file is an example of how to configure ITM/ETM tracing
 +# using openocd if you do not want to modify the application.
 +#
@@ -98,11 +98,12 @@ index 00000000..f54feae1
 +#0x00000000 if DWT is not present.
 +#mww $DWT_CTRL 0x407F1A01                   ;# 1/512 PC sampling, exc trace
 +#AMX START
-+mww $DWT_CTRL 0x000001E0F                  
++#0001030F
++mww $DWT_CTRL 0x400017BB                 
 +
 +# ITM config
 +mww $ITM_LAR 0xC5ACCE55
-+mww $ITM_TCR 0x0001000f
++mww $ITM_TCR 0x0001030F
 +#mww $ITM_TENR 0x7
 +#mww $ITM_PRIVTENR 0x01
 +#mww $ITM_TCR 0x0001000f                    ;# TraceBusID 1, enable dwt/itm/sync
