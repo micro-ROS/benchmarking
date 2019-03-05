@@ -345,7 +345,7 @@ perf_ex_data_in(processing_obj * const obj, message_obj *const msg)
 
 	for (unsigned int i = 0; i < pkt_count; i++) {
 		snprintf(pdata->path_cmd, sizeof(pdata->path_cmd) - 1,
-				PERF_EX_ADDR2LINE_CMD, pdata->elf, pdata->toolchain,
+				PERF_EX_ADDR2LINE_CMD, pdata->toolchain, pdata->elf,
 				packets[i].pc_value.pc);
 
 		if (!(f_popen = popen(pdata->path_cmd, "r"))) {
