@@ -60,6 +60,20 @@
 #define SYNC_DWT_PACKET_SIZE	6
 #define SYNC_PACKET_SIZE	5
 
+#define ADD_BAUDRATE(a,b) { .term_val = a, .user_val = b }
+/**
+ * This structure holds information regarding the baudrate translation
+ * between termios and user 
+ */
+struct {
+	/** This is the take from the GLIBC library termios */
+	unsigned int term_val;
+	/** User value taken from configuration file */
+	unsigned int user_val;
+} uart_baudrate_tbl[] = {
+	ADD_BAUDRATE(B115200, 115200),
+};
+
 /** TODO create a common interface file and uart */
 /* Number of Max UART used */
 
@@ -109,16 +123,23 @@ static void uart_free_instance(uart_obj * const uart)
 static int uart_set_baudrate(uart_obj * const uart, unsigned int baudrate)
 {
 	uart_private_data * const uartpd = uart->pdata;
-
+	unsigned int default_br = uart_baudrate_tbl[0].term_val;
 	DEBUG("Setting baudrate %d \n", baudrate);
         if (tcgetattr (uartpd->pfd.fd, &uartpd->tty) != 0) {
                 ERROR("error %d from tcgetattr", errno);
                 return -1;
         }
 
+	for (unsigned int i = 0; i < ARRAY_SIZE(uart_baudrate_tbl); i++) {
+		if (baudrate == uart_baudrate_tbl[i].user_val) {
+			default_br = uart_baudrate_tbl[i].term_val;
+			break;
+		}	
+	}
+
 	cfmakeraw(&uartpd->tty);
-//	cfsetspeed (&uartpd->tty, baudrate);
-	uartpd->tty.c_cflag= baudrate|CS8|CREAD|CLOCAL;           // 8n1, see termios.h for more information
+	/** We are setting the baudrate to 8N1 */
+	uartpd->tty.c_cflag= default_br|CS8|CREAD|CLOCAL; 
 	uartpd->tty.c_cflag &= ~PARENB;
 	uartpd->tty.c_cflag &= ~CSTOPB;
 	uartpd->tty.c_cflag &= ~CSIZE;
