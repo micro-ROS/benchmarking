@@ -46,6 +46,9 @@ AC_SUBST([ac_list_folder_ext])
 AC_ARG_ENABLE([swd-openocd],
     AS_HELP_STRING([--disable-swd-openocd], [Disable use of openocd to control swd]))
 
+AC_DEFINE_UNQUOTED([BENCHMARKING_TOP_DIR],["$top_abs_path"], 
+				[Top soft directory])
+
 AS_IF([test "x$enable_openocd" != "xno"], [
 	OPENOCD_SCRIPT_PATH=$top_abs_path/ext/openocd/tcl
 	AC_DEFINE_UNQUOTED([SWD_CTRL_OPENOCD_SCRIPT_PATH],["$OPENOCD_SCRIPT_PATH"], 
