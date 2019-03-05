@@ -1,0 +1,34 @@
+[uart-swo]
+device = /dev/ttyUSB0
+baudrate = 115200
+
+[output-files]
+path-json = ./json_output
+path-perf = ./perf_output
+
+[session]
+id = 423b6c0d-65a4-43ec-b4b9-3ff6c3537d2d
+date = 14-02-2019
+type = execution-benchmarking
+
+[board-info] 
+name = olimex-e407
+cpu =  stm32f407vgt6z
+cortex = m4-r1p1
+hardware_module = none
+
+[soft-info]
+name = micro-ROS
+version_nuttx = v8.14.1
+commit-id_nuttx = 89424218421884217fabce
+config_nuttx = nutexx_defconfig
+
+[swd-ctrl]
+name_cpu = stm32f407zgt6
+name_interface = stlink-v2
+
+[ext-bins]
+; needed to use addr2line executable
+path_toolchain = arm-none-eabi-
+path_elf = @top_abs_path@/res/tests/main.elf
+path_toolchain = arm-none-eabi-
