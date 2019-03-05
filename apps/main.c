@@ -83,7 +83,7 @@ static void decoder_catch_signal(int signo) {
 	pipeline_set_end_all();
 }
 
-#define DECODER_CONFIG_PATH_DEFAULT	"./res/configs/default_decoder.ini"
+#define DECODER_CONFIG_PATH_DEFAULT	"./res/configs/test_config.ini"
 void decoder_init_config(config_ini_obj *cfg)
 {
 	DEBUG("initializing config...\n");
@@ -339,8 +339,8 @@ int main(int argc, char **argv)
 
 	DEBUG("Attaching elements\n");
 	pipeline.attach_src(&pipeline, (processing_obj *) &uart_src);
-	pipeline.attach_proc(&pipeline, (processing_obj *) &decoder_proc, NULL);
-	pipeline.attach_proc(&pipeline, (processing_obj *) &cjson_proc, NULL);
+	pipeline.attach_proc(&pipeline, (processing_obj *) &decoder_proc);
+	pipeline.attach_proc(&pipeline, (processing_obj *) &cjson_proc);
 	pipeline.attach_proc(&pipeline, (processing_obj *) &perf_proc);
 	pipeline.attach_proc(&pipeline, (processing_obj *) &file_perf);
 	pipeline.attach_proc(&pipeline, (processing_obj *) &file_json);

@@ -14,7 +14,6 @@ typedef struct {
 	unsigned int count;
 	message_obj parent_msg;
 	message_obj child_msg;
-	bool is_sink_connected;
 	bool is_src_connected;
 	bool is_used;
 	bool stop;
@@ -41,8 +40,7 @@ static int pipeline_attach_src(pipeline_obj * const obj, processing_obj *const s
 }
 
 static int pipeline_attach_proc(pipeline_obj * const obj,
-			   processing_obj * const src,
-	       		   processing_obj * const dst)
+			   processing_obj * const src)
 {
 	pipeline_private_data * const pdata =
 	       		(pipeline_private_data * const) obj->pdata;
@@ -51,33 +49,12 @@ static int pipeline_attach_proc(pipeline_obj * const obj,
 		ERROR("Source not connected, please connect source first\n");
 		return -1;
 	}
-
-	if (pdata->is_sink_connected) {
-		ERROR("Sink is connected , please remove sink first\n");
-		return -1;
-	}
-
 	pdata->proc_objs[pdata->count] = src;
 	pdata->count++;
 	return 0;
 }
 
-static int pipeline_attach_sink(pipeline_obj * const obj, processing_obj * const sink)
-{
-	pipeline_private_data * const pdata =
-			(pipeline_private_data * const) obj->pdata;
-
-	if (pdata->count == ARRAY_SIZE(pdata->proc_objs)) {
-		ERROR("Cannot add sink, too many proc obj");
-		return -1;
-	}
-
-	pdata->proc_objs[pdata->count] = sink;
-	pdata->is_sink_connected = true;
-	pdata->count++;
-}
-
-int pipeline_stream_data(pipeline_obj * const obj)
+static int pipeline_stream_data(pipeline_obj * const obj)
 {
 	pipeline_private_data * const pdata =
 			(pipeline_private_data * const ) obj->pdata;
@@ -141,7 +118,6 @@ int pipeline_init(pipeline_obj *obj)
 
 	memset(obj, 0, sizeof(*obj));
 	obj->attach_src = pipeline_attach_src;
-	obj->attach_sink = pipeline_attach_sink;
 	obj->attach_proc = pipeline_attach_proc;
 	obj->stream_data = pipeline_stream_data;
 	obj->is_stopped = pipeline_get_stop;
