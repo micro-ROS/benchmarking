@@ -336,14 +336,14 @@ int main(int argc, char **argv)
 	if (pipeline_init(&pipeline)) {
 		exit(EXIT_FAILURE);
 	}
+
 	DEBUG("Attaching elements\n");
 	pipeline.attach_src(&pipeline, (processing_obj *) &uart_src);
 	pipeline.attach_proc(&pipeline, (processing_obj *) &decoder_proc, NULL);
 	pipeline.attach_proc(&pipeline, (processing_obj *) &cjson_proc, NULL);
-	pipeline.attach_sink(&pipeline, (processing_obj *) &perf_proc);
-	pipeline.attach_sink(&pipeline, (processing_obj *) &file_perf);
-	pipeline.attach_sink(&pipeline, (processing_obj *) &file_json);
-
+	pipeline.attach_proc(&pipeline, (processing_obj *) &perf_proc);
+	pipeline.attach_proc(&pipeline, (processing_obj *) &file_perf);
+	pipeline.attach_proc(&pipeline, (processing_obj *) &file_json);
 
 	while (!pipeline.is_stopped(&pipeline)) {
 		if (pipeline.stream_data(&pipeline) < 0) {
