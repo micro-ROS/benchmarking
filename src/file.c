@@ -1,3 +1,11 @@
+/*****************************************************************
+ * @file file.c
+ * @author	Alexandre Malki <amalki@piap.pl>
+ * @brief	Source file of containing methods and private data related to the
+ *		file processing object. The file object inherits the 
+ *		processing object. Currenlty the file object only write
+ *		and does not read.
+ *****************************************************************/
 #include <debug.h>
 #include <config.h>
 #include <common-macros.h>
@@ -20,8 +28,9 @@
 /** Default read flags: only read */
 #define FILE_DEFAULT_RD_FLAGS (O_RDONLY)
 
-/** TODO create a common interface file and uart */
+/* TODO create a common interface file and uart */
 
+/** This structure contains information regarding the file being openned */
 typedef struct {
 	/** Path to the file */
 	char file_path[STRING_MAX_LENGTH];
@@ -35,10 +44,17 @@ typedef struct {
 
 } file_priv_data;
 
-
+/**
+ * This is the private file instances. Their could be maxium FILE_COUNT_DATA
+ * instances 
+ */
 static file_priv_data file_pdata[FILE_COUNT_MAX];
 
-
+/**
+ * @brief This function assignes a free instance to the file_obj object.
+ * @param obj File object.
+ * @return 0 upon success, -1 otherwise.
+ */
 static int file_get_instance(file_obj * const file)
 {
 	unsigned int i;
@@ -57,6 +73,11 @@ static int file_get_instance(file_obj * const file)
 	return rc;
 }
 
+/**
+ * @brief This function frees the instance linked to the file_obj object.
+ * @param obj File object.
+ * @return 0 upon success, -1 otherwise.
+ */
 static int file_free_instance(file_obj * const obj)
 {
 	file_priv_data *pdata = (file_priv_data *) obj->pdata;
@@ -72,6 +93,13 @@ static int file_free_instance(file_obj * const obj)
 	return 0;
 }
 
+/**
+ * @brief This function is assigned to the file_set_path callback of the file_obj.
+ * @param obj File object.
+ * @param path Path to the file to open.
+ * @param mode Mode to open file file, currently only FILE_WRONLY or FILE_RDONLY.
+ * @return 0 upon success, -1 otherwise.
+ */
 static int file_set_path(file_obj * const obj, const char * const path,
 			 enum file_mode mode)
 {
@@ -89,6 +117,11 @@ static int file_set_path(file_obj * const obj, const char * const path,
 }
 
 
+/**
+ * @brief This function is assigned to the file init callback of the file_obj.
+ * @param obj File object.
+ * @return 0 upon success, -1 otherwise.
+ */
 static int file_open(file_obj * const obj)
 {
 	file_priv_data *pdata = (file_priv_data *) obj->pdata;
@@ -128,6 +161,11 @@ static int file_open(file_obj * const obj)
 	return 0;
 }
 
+/**
+ * @brief  This function is assigned to the callback file_fini of the file_obj.
+ * @param obj object reference holding the file descriptor to close.
+ * @return 0 upon success, -1 otherwise.
+ */
 static int file_close(file_obj * const obj)
 {
 	file_priv_data *pdata = (file_priv_data *) obj->pdata;
@@ -148,6 +186,14 @@ static int file_close(file_obj * const obj)
 	return 0;
 }
 
+/**
+ * @brief This callback will is the implemenatation of the virtual function
+ * 		data_in.
+ * @param obj Processing obj abstraction.
+ * @param msg message containing the information. The message buffer shall
+ *		contains the data to write.
+ * @return Number of bytes written, -1 if there is an error.
+ */
 static size_t file_write(processing_obj * const obj, message_obj * const msg)
 {
 	file_obj *f_obj = (file_obj *) obj;

@@ -24,7 +24,18 @@ struct swd_ctrl_st {
 };
 
 
+/**
+ * @brief Initialize swd_obj object.
+ * @param obj the swd_obj object to initialize.
+ * @return 0 upon success, -1 otherwise.
+ */
 int swd_ctrl_init(swd_ctrl_obj * const obj);
+
+/**
+ * @brief De-initialize swd_obj object.
+ * @param obj the swd_obj object to de-initialize.
+ * @return 0 upon success, -1 otherwise.
+ */
 int swd_ctrl_fini(swd_ctrl_obj * const obj);
 
 #endif /* __SWD_CTRL_H__ */

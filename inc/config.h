@@ -1,3 +1,9 @@
+/**
+ * @file config.h
+ * @brief This file contains all definition needed by all source file. Also it
+ *		contains definitions of the generic config object.
+ * @author	Alexandre Malki <amalki@piap.pl>
+ */
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
@@ -102,6 +108,7 @@ typedef struct {
 	} value;
 } cfg_param;
 
+/** This is a helper to create a structure structure */
 #define CONFIG_HELPER_CREATE(section_cfg, name_cfg, type_cfg)	\
 		{  						\
 		 .section = section_cfg,	   		\
@@ -117,24 +124,58 @@ typedef cfg_param * const (*config_get_value_cb)
 typedef int		  (*config_set_value_cb)
 			  (config_obj * const obj, cfg_param * const param);
 
+/** This is the parent object of all configs. Meaning that all implementation of
+ * a configuration module should inherite from this object*/
 struct config_obj_st {
+	/** Callback to retrieve value of a field in a configuration */
 	config_get_value_cb 	get_value;
+	/** Callback to set the value of a field in a configuration */
 	config_set_value_cb 	set_value;
-
+	/** This a pointer to a private data */
 	void 			*pdata;
 };
 
-
+/**
+ * @brief Default callback to get value. This callback is used to avoid 
+ *		segmentation fault in case of double fini when setting a 
+ *		configuration value.
+ * @param obj This is the configuration abstraction object.
+ * @param param This is parameter information to get.
+ * @return Will return -1 to indicate some was wrong.
+ */
 int config_init(config_obj * const obj);
+
+/**
+ * @brief This function will retrieve a valid instance.
+ * @return NULL upon error, a new instance otherwise.
+ */
 config_obj * const config_get_instance(void);
+
+/**
+ * @brief This function will release the used instance and set default
+ *		callbacks.
+ * @return 0 upon success, -1 otherwise.
+ */
 int config_fini(config_obj * const obj);
 
+/**
+ * Helper to get the string from a cfg_param object 
+ * @warning This helper assume that the configuration was already initialized.
+ */
 #define CONFIG_HELPER_GET_STR(param_info) \
 		config_get_instance()->get_value(config_get_instance(), param_info)->value.str
 
+/**
+ * Helper to get the unsigned 32 bits integer from a cfg_param object
+ * @warning This helper assume that the configuration was already initialized.
+ */
 #define CONFIG_HELPER_GET_U32(param_info) \
 		config_get_instance()->get_value(config_get_instance(), param_info)->value.u32
 
+/**
+ * Helper to get the signed 32 bits integer from a cfg_param object
+ * @warning This helper assume that the configuration was already initialized.
+ */
 #define CONFIG_HELPER_GET_S32(param_info) \
 		config_get_instance()->get_value(config_get_instance(), param_info)->value.s32
 

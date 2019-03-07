@@ -1,3 +1,9 @@
+/**
+ * @file form.h
+ * @brief This file contains all definition needed by all source file. Also it
+ *		contains definitions of the generic config object.
+ * @author	Alexandre Malki <amalki@piap.pl>
+ */
 #include <debug.h>
 #include <config.h>
 #include <common-macros.h>
@@ -11,10 +17,12 @@
 #include <unistd.h>
 
 
+/** End of file char to append to the JSON data */
 #define CJSON_END_OF_FILE "\n\t]\n}"
 
-
+/** This structure link the configuration param to the json element */
 typedef struct {
+	/** Configuration parameter */
 	cfg_param param;
 	/**
 	 * Using the address of the pointer in case of  changes
@@ -22,30 +30,37 @@ typedef struct {
 	cJSON **parent;
 } json_config;
 
+/** This structure represend the cjson output with its different node */
 typedef struct {
+	/** Root benchmarking CJSON node */
 	cJSON	*root_benchmarking;
+	/**  Session CJSON node */
 	cJSON	*session_info;
+	/** Board related information CJSON node */
 	cJSON	*board_info;
+	/** Software related information CJSON node */
 	cJSON	*soft_info;
+	/**  Packets table CJSON node */
 	cJSON	*packets;
-	cJSON	*raw_packets;
-	cJSON	*last_packet;
-
+	/** Indicating if the node is used or not */
 	bool	is_used;
+	/** Indicating if this is the first run */
 	bool	is_nfirstrun;
+	/** Table on the list of json_cfg */
 	json_config *json_cfgs;
+	/** Pointer on a packet to cjson form translator*/
 	pkt_to_form *ptf;
 } form_json_priv_data;
 
 
 /* TODO Stringify */
 
-
+/** Configure the kind of pkt translator needed */
 static pkt_to_form cjson_ptf = {
 		.fmt = PKT_CONVERTER_CJSON,
 	};
 
-
+/** Instantiate on element of the private data */
 static form_json_priv_data json_priv_data = {
 	.ptf = &cjson_ptf,
 };
@@ -55,7 +70,11 @@ static form_json_priv_data json_priv_data = {
 			.param = CONFIG_HELPER_CREATE(section, name, type),	\
 			.parent = &json_priv_data.ROOT_CJSON,			\
 		}
-/* TODO: Think of a more flexible way to present it */
+
+/**
+ * This is the table of structure linkes the cJSON object to the configuration
+ * file.
+ */
 static json_config form_json_cfgs[] = {
 	JSON_CONFIG_INIT("session", "id", CONFIG_STR, session_info),
 	JSON_CONFIG_INIT("session", "date", CONFIG_STR, session_info),
@@ -72,6 +91,12 @@ static json_config form_json_cfgs[] = {
 	JSON_CONFIG_INIT("soft-info", "config_nuttx", CONFIG_STR, soft_info),
 };
 
+/**
+ * @brief It will format the output of the first message by removing the last
+ *		square bracket and last curly bracket.
+ * @param msg A message containing a string containing at least one square bracket
+ *		and one curly bracket.
+ */
 static void form_json_format_init_output(message_obj * const msg)
 {
 	char *brace = strrchr(msg->ptr(msg), ']');
@@ -85,6 +110,13 @@ static void form_json_format_init_output(message_obj * const msg)
 				- (uintptr_t)brace) - 1);
 }
 
+/**
+ * @brief It will format the output of the all messages except the first  by
+ *		 removing the last square bracket and last curly bracket.
+ * @param msg A message containing a string containing at least one square bracket
+ *		and one curly bracket.
+ * @return 0 upon success, -1 otherwise.
+ */
 static int form_json_format_child_output(message_obj * const msg)
 {
 	size_t written = 0;
@@ -141,9 +173,15 @@ static int form_json_format_child_output(message_obj * const msg)
 	free(temp);
 }
 
+/**
+ * @brief This function is formating into a string the JSON nodes.
+ * @param pnode Parent node. All children of this parent will be printed into 
+ *		the buffer string message msg.
+ * @param msg The message object containing the string buffer.
+ * @return the number of byte written upon success, otherwise -1.
+ */
 static size_t form_json_print_nodes(cJSON *pnode, message_obj * const msg)
 {
-
 	size_t rc = -1;
 	char *data = NULL;
 
@@ -171,6 +209,14 @@ buffer_failed:
 
 }
 
+/**
+ * @brief This callback is the implentation of the processing object function 
+ *		data_out. It will convert the cJSON data to a formate string to
+ *		be written into a file.
+ * @param obj Processing abstraction object 
+ * @param msg Message obj that hold the string buffer.
+ * @return The number of byte written upon sucecss, -1 otherwise.
+ */
 static size_t form_json_send_data(processing_obj * const obj,
 				  message_obj * const msg)
 {
@@ -216,6 +262,14 @@ static size_t form_json_send_data(processing_obj * const obj,
 	return msg->length(msg);
 }
 
+/**
+ * @brief This callback is the implentation of the processing object function 
+ *		data_in. It will convert the cJSON data to a formate string to
+ *		be written into a file.
+ * @param obj Processing abstraction object 
+ * @param msg Message object that holds the libswo data.
+ * @return The number of byte read from the message object buffer.
+ */
 static size_t form_json_receive_data(processing_obj * const obj,
 				     message_obj * const msg)
 {
@@ -230,6 +284,12 @@ static size_t form_json_receive_data(processing_obj * const obj,
 	return pkt_convert(jpdata->ptf, msg);
 }
 
+/*
+ * @brief Creating a cJSON string node.
+ * @param parent The cJSON parent node.
+ * @param name Name of the cJSON string node.
+ * @param value The name that will be displayed in the JSON output.
+ */
 static int form_json_create_str_node(cJSON *parent, const char * const name,
 				      char const * const value)
 {
@@ -241,7 +301,13 @@ static int form_json_create_str_node(cJSON *parent, const char * const name,
 	return 0;
 }
 
-
+/*
+ * @brief Creating a cJSON number node. cJSON library uses float number.
+ * @param parent The cJSON parent node.
+ * @param name Name of the cJSON number node.
+ * @param value The number that will be stored in that node.
+ * @return 0 upon success, -1 otherwise.
+ */
 static int form_json_create_num_node(cJSON *parent, const char * const name,
 				     float value)
 {
@@ -253,6 +319,12 @@ static int form_json_create_num_node(cJSON *parent, const char * const name,
 	return 0;
 }
 
+/*
+ * @brief Create the firsts nodes that holds information such as the session,
+ * 		board, software and type of benchmarking information.
+ * @param This is the software info.
+ * @return 0 upon success, -1 otherwise.
+ */
 static int form_json_init_nodes(form_obj * const obj)
 {
 	form_json_priv_data *jpdata = (form_json_priv_data *) obj->pdata;
@@ -304,6 +376,11 @@ static int form_json_init_nodes(form_obj * const obj)
 	return 0;
 }
 
+/**
+ * @brief this Function init the main cJSON objects describing the session 
+ * @param obj The generic form_obj.
+ * @return 0 upon success, -1 if an error ocurred while add/creatin cJSON object.
+ */
 static int form_json_init_session(form_obj * const obj)
 {
 	form_json_priv_data *pdata = (form_json_priv_data *) obj->pdata;
@@ -384,6 +461,7 @@ no_free_instance:
 
 int form_cjson_fini(form_obj * const obj)
 {
+/** TODO implemente this */
 	DEBUG("To Be implemented\n");
 	return 0;
 }

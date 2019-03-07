@@ -1,3 +1,10 @@
+/*****************************************************************
+ * file: message.h
+ * author: Alexandre Malki <amalki@piap.pl>
+ * brief:  This is the header of the message_object, more information
+ * 		about the the message_object in source file message.c.
+ *****************************************************************/
+
 #ifndef __MESSAGE_H__
 #define __MESSAGE_H__
 
@@ -51,7 +58,21 @@ struct message_obj_st {
 	void			*pdata;
 };
 
+/**
+ * @brief Initialize the message object, and assign a buffer to it.
+ * @param obj This is the message object to initilized. Must be
+ * 		allocated before hand.
+ * @return 0 upon success, -1 otherwise.
+ */
 int message_init(message_obj * const obj);
+
+/**
+ * @brief Initialize the message object, and remote the attached
+ * 		 a buffer to it.
+ * @param obj This is the message object to initilized. Must be
+ * 		initilized before before hand.
+ * @return 0 upon success, -1 otherwise.
+ */
 int message_fini(message_obj * const obj);
 
 #endif /* __MESSAGE_H__ */
