@@ -1,3 +1,12 @@
+/*****************************************************************
+ * file: swd_ctrl.c
+ * author: Alexandre Malki <amalki@piap.com>
+ * @brief: This is swd_ctrl file. The swd_ctrl_obj this will fork a openocd
+ * 		instance with the configuration file passed.
+ *
+ * 		TODO: This module shall be able to take configuration for different
+ * 		kind of benchmarking (perf-execution/memory-benchmarking).
+ *****************************************************************/
 #include <debug.h>
 #include <common-macros.h>
 #include <config.h>
@@ -12,17 +21,32 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+/** 
+ * This is the type of configuration that has to be to openocd
+ */
 enum config_type {
+	/** Debugger interface configuration */
 	CFG_INTERFACE = 0,
+	/** CPU configuration */
 	CFG_CPU,
 };
 
+/**
+ * This structure holds informattion related to the debug probe interface or the
+ * CPU device
+ */
 typedef struct {
-	enum config_type	type;
+	/** Type of configuration file. */
+ 	enum config_type	type;
+	/** configuration name */
 	const char		cfg_name[STRING_MAX_LENGTH];
+	/** Command to send to openocd */
 	const char		cmd[STRING_MAX_LENGTH];
 } swd_ctrl_config;
 
+/** 
+ * Configuration to section to retrieve from the configuration module
+ */
 static const char *swd_ctrl_config_gbl[CFG_CPU+1] = {
 						CFG_SECTION_SWD_CTRL_IF,
 						CFG_SECTION_SWD_CTRL_CPU
@@ -51,16 +75,29 @@ static const swd_ctrl_config swd_ctrl_cfgs[] = {
 			},
 };
 
+/**
+ * SWD control Internal structure (private data).
+ */
 typedef struct {
+	/** This is the configuration section information */
 	const char		*cfgs[CFG_CPU+1];
+	/** argument to pass to the openocd software */
 	char			args[STRING_MAX_LENGTH * 4];
+	/** This is the openocd forked pid*/
 	pid_t			fork_pid;
-
+	/** Boolean informing  if the object is initialized or not */
 	bool			is_init;
 } swd_ctrl_priv_data;
 
+/** Instance of the swd_ctr private data */
 static swd_ctrl_priv_data swd_ctrl_pdata;
 
+/**
+ * @brief Retrieves the configuration interface/cpu from the config value.
+ * @param name The section name to look for.
+ * @param type Type of configuration.
+ * @return a pointer on a swd_ctrl_config upon success, NULL otherwise.
+ */
 static const swd_ctrl_config *swd_ctrl_get_cfg(const char *name,
 					       enum config_type type)
 {
@@ -91,6 +128,14 @@ static const swd_ctrl_config *swd_ctrl_get_cfg(const char *name,
 	return NULL;
 }
 
+/**
+ * @brief Function that find get the configuration string depending on the type
+ * 		and the cfg_param provided.
+ * @param param cfg_param to provide providing the information about the section
+ * 		and the config field.
+ * @param type The type of parameter CPU/INTERFACE.
+ * @return return the command to execute upon success, NULL otherwise.
+ */
 static const char *swd_ctrl_find_param_gbl_cfg(cfg_param * const param,
 					  enum config_type type)
 {
@@ -108,6 +153,13 @@ static const char *swd_ctrl_find_param_gbl_cfg(cfg_param * const param,
 	return swd_ctrl_cfg->cmd;
 }
 
+/**
+ * @brief Retrieve information from the configuration module to set the
+ * 		configuration file (openocd scripts).
+ * @param obj swd_ctrl_obj that is the object that controls the SWD.
+ * @param type the type of configuration needed CPU/INTERFACE.
+ * @return 0 upon success, -1 otherwise
+ */
 static int swd_ctrl_set_from_gbl_cfg(swd_ctrl_obj * const obj,
 					       enum config_type type)
 {
@@ -129,16 +181,32 @@ static int swd_ctrl_set_from_gbl_cfg(swd_ctrl_obj * const obj,
 	return 0;
 }
 
+/*
+ * @brief Method called to set the INTERFACE configuration file.
+ * @param obj swd_ctrl_obj that is the object that controls the SWD.
+ * @return 0 upon sucess, -1 otherwise.
+ */
 static int swd_ctrl_set_interface_from_gbl_cfg(swd_ctrl_obj * const obj)
 {
 	return swd_ctrl_set_from_gbl_cfg(obj,CFG_INTERFACE);
 }
 
+/*
+ * @brief Method called to set the CPU configuration file.
+ * @param obj swd_ctrl_obj that is the object that controls the SWD.
+ * @return 0 upon sucess, -1 otherwise.
+ */
 static int swd_ctrl_set_cpu_from_gbl_cfg(swd_ctrl_obj * const obj)
 {
 	return swd_ctrl_set_from_gbl_cfg(obj,CFG_CPU);
 }
 
+/**
+ * @brief starting openocd software 
+ * @param obj swd_ctrl_obj that is the object that controls the SWD.
+ * @param prog the name of the calling program.
+ * @return 0 upon succes, -1 otherwise.
+ */
 static int swd_ctrl_start(swd_ctrl_obj * const obj, char * const prog)
 {
 	swd_ctrl_priv_data *pdata = (swd_ctrl_priv_data *) obj->pdata;
@@ -178,6 +246,12 @@ static int swd_ctrl_start(swd_ctrl_obj * const obj, char * const prog)
 	return 0;
 }
 
+/**
+ * @brief stop the openocd program  it send a kill signal to the child object
+ * 	and waits for its return.
+ * @param obj swd_ctrl_obj that is the object that controls the SWD.
+ * @return 0 upon succes, -1 otherwise.
+ */
 static int swd_ctrl_stop(swd_ctrl_obj * const obj)
 {
 	swd_ctrl_priv_data *pdata = (swd_ctrl_priv_data *) obj->pdata;
@@ -193,29 +267,45 @@ static int swd_ctrl_stop(swd_ctrl_obj * const obj)
 	return 0;
 }
 
+/**
+ * @brief default configuration method 
+ */
 static int swd_ctrl_default_set_cfg(swd_ctrl_obj * const obj, const char *name)
 {
 	WARNING("Instance not initalized\n");
 	return -1;
 }
 
+/**
+ * @brief default start method.
+ */
 static int swd_ctrl_default_start(swd_ctrl_obj * const obj, char * const prog)
 {
 	WARNING("Instance not initalized\n");
 	return -1;
 }
+
+/**
+ * @brief default stop method
+ */
 static int swd_ctrl_default_stop(swd_ctrl_obj * const obj)
 {
 	WARNING("Instance not initalized\n");
 	return -1;
 }
 
+/**
+ * @brief default function to set from global cfg 
+ */
 static int swd_ctrl_set_default_from_gbl_cfg(swd_ctrl_obj * const obj)
 {
 	ERROR("Instance not initialized\n");
 	return -1;
 }
 
+/**
+ * @brief this is the default set configuration.
+ */
 static int swd_ctr_set_cfg_todo(swd_ctrl_obj * const obj, const char *name)
 {
 	ERROR("Not implemented\n");

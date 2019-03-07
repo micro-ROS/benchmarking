@@ -1,3 +1,9 @@
+/**
+ * @file decoder_swo.h
+ * @brief	Source file decoding the data feed from the UART. Currenlty based
+ *		on the libswo library.
+ * @author	Alexandre Malki <amalki@piap.pl>
+ */
 #include <decoder_swo.h>
 #include <common-macros.h>
 #include <debug.h>
@@ -7,23 +13,47 @@
 #include <stdbool.h>
 #include <string.h>
 
+#define DECODER_SWO_BUFFER_MAX_LEN	4096
+
+/** Internal private data used to keep track of the number of packets decodded
+ * 	and if the element was initialized or not.
+ */
 typedef struct {
+	/** Context needed by the libswo library. */
 	struct libswo_context *swo_ctx;
+	/** Number of packet decoded on last decoding sessionl */
 	unsigned int cur_packet_decoded;
+	/** Number of packet decoded since the start of the applicationl */
 	unsigned int tot_packet_decoded;
+	/**
+	 * Indicating if yes or not the object is used or not, avoid double
+	 * init/fini on the same object.
+	 */ 
 	bool is_used;
+	/**
+	 * Internal message object.
+	 */
 	message_obj msg;
 } decoder_swo_priv_data;
 
-
+/** Instantiation of the only decoder that can be runned */
 static decoder_swo_priv_data decoder_swo_pdata;
 
-static union libswo_packet packets_decoded[4096 / sizeof(union libswo_packet)];
+/** Buffer holding number of packet to hold. */
+static union libswo_packet packets_decoded[DECODER_SWO_BUFFER_MAX_LEN / sizeof(union libswo_packet)];
 
+/**
+ * @brief The default packet handler, here for debug only.
+ * @param packet Information about the SWD packet.
+ * @param c counter value linke to the kind of packet.
+ * @param s string packet name.
+ * @sa libswo.h
+ */
 static void default_packet_handler(const union libswo_packet *packet,
 				   unsigned int c, const char *s)
 {
 #if 0
+	/** TODO implement a debug filter configurable by command line */
 	if (packet->type == LIBSWO_PACKET_TYPE_DWT_PC_SAMPLE ||
 		packet->type == LIBSWO_PACKET_TYPE_DWT_PC_VALUE)
 
@@ -39,10 +69,17 @@ static void default_packet_handler(const union libswo_packet *packet,
 			.count = 0,		\
 			.name = str(pkt_type)	\
 		}
+/**  This structure holds the link between the libswo packet and the callback
+ *		that will called.
+ *		Currently this is only used for debug
+ */
 static struct {
+	/** Callback to call when decoded packet match */
 	void (*pkt_cb) (const union libswo_packet *packet,
 		       	unsigned int c, const char *s);
+	/** Number of type a decoded packet type matches */
 	unsigned int count;
+	/** Name of the packet taken from the LIBSWO type defines */
 	char *name;
 } default_handlers[] = {
 	set_handler(LIBSWO_PACKET_TYPE_UNKNOWN, 	default_packet_handler),
@@ -62,6 +99,14 @@ static struct {
 	set_handler(LIBSWO_PACKET_TYPE_DWT_DATA_VALUE,  default_packet_handler),
 };
 
+/** 
+ * @brief This is the general packet callback. This callback will be called each
+ *		time a packet is decoded.
+ * @param ctx libswo related context.
+ * @param packet The actual decoded packet.
+ * @param user_data This is an abstract pointer. In our case this is the private
+ *		structure.
+ */
 static int packet_cb(struct libswo_context *ctx,
 		const union libswo_packet *packet, void *user_data)
 {
@@ -98,6 +143,12 @@ static int packet_cb(struct libswo_context *ctx,
 	return true;
 }
 
+/**
+ * @brief The function that feeds the decoder.
+ * @param obj The generic processing object.
+ * @param msg The message data coming form the above level.
+ * @return The number of written bytes written, -1 on error.
+ */
 static size_t decoder_swo_data_in(processing_obj * const obj,
 				  message_obj * const msg)
 {
@@ -128,6 +179,12 @@ static size_t decoder_swo_data_in(processing_obj * const obj,
 	return pdata->cur_packet_decoded * sizeof (union libswo_packet);
 }
 
+/**
+ * @brief The function that feeds the decoder.
+ * @param obj The generic processing object.
+ * @param msg The message data coming form the above level.
+ * @return The number of written bytes written, -1 on error.
+ */
 static size_t decoder_swo_data_out(processing_obj * const obj,
 				   message_obj * const msg)
 {
@@ -138,12 +195,7 @@ static size_t decoder_swo_data_out(processing_obj * const obj,
 
 	msg->write(msg, (void *) packets_decoded,
 	       pdata->cur_packet_decoded * sizeof (union libswo_packet));
-#if 0
-	for (unsigned int i=0; i<len; i++) {
-		DEBUG("data %d, %02x\n", i, data[i]);
-	}
-	DEBUG("Number of data received %ld\n", packet_decoded * sizeof (union libswo_packet));
-#endif
+
 	__packet_decoded = pdata->cur_packet_decoded;
 	DEBUG("Number of data received %ld\n", __packet_decoded * sizeof (union libswo_packet));
 	pdata->cur_packet_decoded = 0;
@@ -151,6 +203,10 @@ static size_t decoder_swo_data_out(processing_obj * const obj,
 	return __packet_decoded * sizeof (union libswo_packet);
 }
 
+/**
+ * @brief Checks if the instance is used. And return it if it available
+ * @return The pointer on the private data, NULL if unavailable.
+ */
 static decoder_swo_priv_data *decoder_swo_get_free_instance(void)
 {
 	if (decoder_swo_pdata.is_used) {
@@ -160,7 +216,12 @@ static decoder_swo_priv_data *decoder_swo_get_free_instance(void)
 	return &decoder_swo_pdata;
 }
 
-static int decoder_swo_free_instance(decoder_swo_priv_data *pdata)
+/**
+ * @brief This function will set the private data as free to be used again.
+ * @param pdata Pointer to the private data.
+ * @return The number of written bytes written, -1 on error.
+ */
+static int decoder_swo_free_instance(decoder_swo_priv_data * const pdata)
 {
 	if (!pdata->is_used) {
 		ERROR("Freeing private data\n");
@@ -230,3 +291,4 @@ int decoder_swo_fini(decoder_swo_obj * const obj)
 	DEBUG("Decoder Swo uninitialized\n");
 	return 0;
 }
+

@@ -1,3 +1,10 @@
+/** 
+ * @file config_ini.c
+ * @brief Implementation of the virtual config_obj. This implementation only
+ *		only manage ini files. Also it does not write back value to the
+ *		openned file.
+ * @author	Alexandre Malki <amalki@piap.pl>
+ */ 
 #include <debug.h>
 #include <config_ini.h>
 
@@ -5,15 +12,39 @@
 
 #include <stdbool.h>
 
+/** 
+ * Internal private structure holding context information about the ini
+ * implementation.
+ */
 typedef struct {
+	/** Pointer on the ini library context. */
 	ini_t *ini_cfg;
+	/** Path to the configuration file. */
 	const char * path_cfg;
+	/**
+	 * Boolean indicating if config ini module was initialized.
+	 * @sa config_ini_init
+	 * @sa config_ini_fini
+	 */
 	bool is_init;
+	/**
+	 * Boolean indicating if the init library successfully get information
+	 * from the configuration file.
+	 */
 	bool is_cfg_init;
 } config_ini_priv_data;
 
 static config_ini_priv_data ci_pdata;
 
+/** 
+ * @brief This function will retrieve the information located in a configuration
+ *		ini file.
+ * @param obj This is the abstracted config object. 
+ * @param param The parameter object containing the section, field name and type
+ *		of object.
+ * @return A pointer on the same structure with the update value field. NULL is
+ *		return upon error.
+ */
 static cfg_param * const  config_ini_get_value(config_obj * const obj,
 					       cfg_param * const param)
 {
@@ -57,13 +88,27 @@ static cfg_param * const  config_ini_get_value(config_obj * const obj,
 }
 
 
+/** 
+ * @brief Callback setting the value in the ini file. Currently not implemented.
+ * @param obj This is the abstracted config object. 
+ * @param param structure containing information about the section/field to
+ *		access.
+ * @return Always 0.
+ */
 static int config_ini_set_value(config_obj * const obj,
 					       cfg_param * const param)
 {
-	DEBUG("Not possible\n");
+	WARNING("Not possible\n");
 	return 0;
 }
 
+/** 
+ * @brief Callback opening the configuration ini file and initializing the ini
+ * 		library.
+ * @param obj Ini configuration object
+ * @param msg Path to the configuration file. 
+ * @return 0 upon success, -1 otherwise.
+ */
 static int config_ini_open_config(config_ini_obj * const obj,
 				  const char * msg)
 {
@@ -91,6 +136,12 @@ static int config_ini_open_config(config_ini_obj * const obj,
 	return 0;
 }
 
+/** 
+ * @brief Initialization function in charge to set internal and virtual 
+ *		callbacks and set information.
+ * @param obj This is the abstracted config object. 
+ * @return 0 upon success, -1 otherwise.
+ */
 int config_ini_init(config_ini_obj * const obj)
 {
 	config_obj *cfg_obj = (config_obj *) obj;
@@ -110,6 +161,11 @@ int config_ini_init(config_ini_obj * const obj)
 	return 0;
 }
 
+/** 
+ * @brief  De-Initialisation of the object.
+ * @param obj This is the abstracted config object. 
+ * @return 0 upon success, -1 otherwise.
+ */
 int config_ini_fini(config_ini_obj * const obj)
 {
 	config_ini_priv_data *pdata = (config_ini_priv_data *)obj->pdata;

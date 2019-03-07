@@ -1,3 +1,12 @@
+/*****************************************************************
+ * file: message.c
+ * author: Alexandre Malki <amalki@piap.pl>
+ * brief:  This is the source of the message_object. A message object  is
+ * 		as an object provide more information about a a buffer. This
+ * 		object holds information such as the size of the internal buffer
+ * 		the number of byte written to it (usable). And some internal
+ * 		method that allow to write/append/read and access the raw pointer.
+ *****************************************************************/
 #include <message.h>
 #include <config.h>
 
@@ -11,15 +20,20 @@
 /* For now everything is static, do not want to look for leaks right know *?
 #include <malloc.c> */
 
+/** Internal message_object structure */
 typedef struct {
 /* TODO create buffer size */
 #ifdef MESSAGE_DYNAMIC
 #error "Currently dynamic message passing is not implemented"
 #else
+	/** Underlying buffer object */
 	char buffer[MESSAGE_BUFFER_SZ_MAX];
 #endif
+	/** Length of usable bytes (written) by the application */
 	size_t length;
+	/** Total length of the buffer */
 	size_t total_len;
+	/** Information if the buffer is used by a message_obj */
 	bool is_used;
 } message_priv_data;
 
@@ -28,7 +42,7 @@ static message_priv_data message_instances[MESSAGE_NSTANCES_CNT_MAX];
 
 
 /**
- * \brief Default copy callback
+ * @brief Default copy callback
  * */
 static size_t message_cpy_default(message_obj * restrict obj,
 			       message_obj * restrict src)
@@ -38,7 +52,7 @@ static size_t message_cpy_default(message_obj * restrict obj,
 }
 
 /**
- * \brief Default ptr callback
+ * @brief Default ptr callback
  * */
 static char *message_ptr_default(const message_obj * const obj)
 {
@@ -47,7 +61,7 @@ static char *message_ptr_default(const message_obj * const obj)
 }
 
 /**
- * \brief Default length callback
+ * @brief Default length callback
  * */
 static size_t message_length_default(const message_obj * const obj)
 {
@@ -56,7 +70,7 @@ static size_t message_length_default(const message_obj * const obj)
 }
 
 /**
- * \brief Default size callback
+ * @brief Default size callback
  * */
 static size_t message_totlen_default(const message_obj * const obj)
 {
@@ -65,7 +79,7 @@ static size_t message_totlen_default(const message_obj * const obj)
 }
 
 /**
- * \brief Default write callback
+ * @brief Default write callback
  * */
 static size_t message_write_default(message_obj * const obj,
 				 char * const buffer, size_t len)
@@ -75,7 +89,7 @@ static size_t message_write_default(message_obj * const obj,
 }
 
 /**
- * \brief append data to the end of buffer
+ * @brief append data to the end of buffer
  */
 static size_t message_append_default(message_obj * const obj,
 				 char * const buffer, size_t len)
@@ -85,7 +99,7 @@ static size_t message_append_default(message_obj * const obj,
 }
 
 /**
- * \brief Default read callback
+ * @brief Default read callback
  * */
 static size_t message_read_default(message_obj * const obj,
 				  char * const buffer, size_t len)
@@ -94,6 +108,17 @@ static size_t message_read_default(message_obj * const obj,
 	return -1;
 }
 
+/**
+ * @brief Writing len data to message_obj's buffer from the buffer.
+ * 		This funcction will make sure that the size written
+ * 		does not overflow the message_obj's buffer.
+ * @param obj Message_objec to write to.
+ * @param buffer Buffer holding data.
+ * @param len Length to write.
+ * @return the len if enough space is available in the buffer, or
+ * 		the maxium bytes written into the message_obj's 
+ * 		buffer
+ */
 static size_t message_write_buffer(message_obj * const obj,
 				 char * const buffer, size_t len)
 {
@@ -107,6 +132,16 @@ static size_t message_write_buffer(message_obj * const obj,
 	return min;
 }
 
+/**
+ * @brief Append len bytes of data to the message_obj's buffer. This
+ * 		function will make sure that the size written does not
+ * 		overflow the message_obj buffer.
+ * @param obj Message_obj to append data to.
+ * @param buffer The data to append to the message_obj
+ * @param len The size in byte to append to the buffer.
+ * @return  the actuall amout of byte written. If the size will overflow,
+ * 		then the function will return -1
+ */
 static size_t message_append_buffer(message_obj * const obj,
 				 char * const buffer, size_t len)
 {
@@ -127,6 +162,17 @@ static size_t message_append_buffer(message_obj * const obj,
 	return len;
 }
 
+/**
+ * @brief Read (copy) the content of the underlying message_obj's buffer to
+ * 		an external buffer. This function will make sure that the
+ * 		size read stay withing the message_obj's buffer boundaries.
+ * @param obj Message object to read from.
+ * @param buffer External buffer that will hold the data, should be big enough
+ * 		to received the data read.
+ * @param len Request length to read.
+ * @return The number of bytes actually read could be less than the requested
+ * 		size.
+ */
 static size_t message_read_buffer(message_obj * const obj, char * const buffer,
 				  size_t len)
 {
@@ -138,13 +184,25 @@ static size_t message_read_buffer(message_obj * const obj, char * const buffer,
 	return min;
 }
 
+/**
+ * @brief Return the number of byte written using write/append to the
+ * 		message_obj's buffer or the value set by using set_length method.
+ * @param obj Messsage object.
+ * @return The number of usable byte in the buffer.
+ */
 static size_t message_length_buffer(const message_obj * const obj)
 {
 	message_priv_data *pdata = (message_priv_data *)obj->pdata;
 	return pdata->length;
 }
 
-
+/**
+ * @brief This function will set the length of underlying buffer. This function
+ * 		is used in case of a writing to the buffer directly instead
+ * 		of using the write methods.
+ * @param obj Message object.
+ * @param len The size to set.
+ */
 static void message_set_length_buffer(const message_obj * const obj, size_t len)
 {
 	message_priv_data *pdata = (message_priv_data *) obj->pdata;
@@ -154,12 +212,24 @@ static void message_set_length_buffer(const message_obj * const obj, size_t len)
 	pdata->length = len;
 }
 
+/**
+ * @brief Return the total length usable of the underlying buffer attached
+ * 		to a specific message object.
+ * @param obj Message object.
+ * @return The total length of the the message object's buffer. 
+ */
 static size_t message_totlen_buffer(const message_obj * const obj)
 {
 	message_priv_data *pdata = (message_priv_data *)obj->pdata;
 	return pdata->total_len;
 }
 
+/**
+ * @brief To retrieve the pointer on the underlying buffer that the
+ * 		message holds.
+ * @param obj message object containing the buffer.
+ * @return a pointer on the buffer
+ */
 static char *message_ptr_buffer(const message_obj * const obj)
 {
 	message_priv_data *pdata = (message_priv_data *)obj->pdata;
@@ -167,9 +237,12 @@ static char *message_ptr_buffer(const message_obj * const obj)
 }
 
 /**
- * \brief Copy a message from src into obj. If obj's total_len is lower
+ * @brief Copy a message from src into obj. If obj's total_len is lower
  *  		than the the total_len of src, then only the total_len's obj
  * 		is copied.
+ * @param obj Message object to copy to.
+ * @param sr Message object to copy from.
+ * @return the number of byte copied.
  */
 static size_t message_cpy_buffer(message_obj * const obj,
 			         message_obj * const src)
@@ -177,6 +250,10 @@ static size_t message_cpy_buffer(message_obj * const obj,
 	return message_write_buffer(obj, src->ptr(src), src->length(src));
 }
 
+/**
+ * @brief Retrieve an unused private instance of message.
+ * @return An available private instance of message.
+ */
 static message_priv_data *message_get_free_instance(void)
 {
 #ifdef MESSAGE_DYNAMIC
@@ -199,6 +276,11 @@ static message_priv_data *message_get_free_instance(void)
 #endif
 }
 
+/**
+ * @brief Set default values to the private instance.
+ * @param pdata private instance.
+ * @return 0 upon success.
+ */
 int message_internal_init(message_priv_data *pdata)
 {
 	pdata->length = 0;
