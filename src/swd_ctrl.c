@@ -53,36 +53,11 @@ static const char *swd_ctrl_config_gbl[CFG_CPU+1] = {
 					};
 
 /**
- * Order matter, so if you want your config to predominate over
- * another general configuration, then put your configuration
- * before the general one 
- */
-static const swd_ctrl_config swd_ctrl_cfgs[] = {
-			{
-				.type = CFG_INTERFACE,
-				.cfg_name = "stlink-v2",
-				.cmd = "-f" SWD_CTRL_OPENOCD_INTERFACE_PATH"/stlink-v2.cfg",
-			},
-			{
-				.type = CFG_CPU,
-				.cfg_name = "stm32f407",
-				.cmd = "-f" SWD_CTRL_OPENOCD_CPU_PATH"/stm32f407.cfg",
-			},
-			{
-				.type = CFG_CPU,
-				.cfg_name = "stm32f4*",
-				.cmd = "-f" SWD_CTRL_OPENOCD_CPU_PATH"/stm32f4x.cfg",
-			},
-};
-
-/**
  * SWD control Internal structure (private data).
  */
 typedef struct {
 	/** This is the configuration section information */
-	const char		*cfgs[CFG_CPU+1];
-	/** argument to pass to the openocd software */
-	char			args[STRING_MAX_LENGTH * 4];
+	char		cfgs[CFG_CPU+1][STRING_MAX_LENGTH];
 	/** This is the openocd forked pid*/
 	pid_t			fork_pid;
 	/** Boolean informing  if the object is initialized or not */
@@ -91,67 +66,6 @@ typedef struct {
 
 /** Instance of the swd_ctr private data */
 static swd_ctrl_priv_data swd_ctrl_pdata;
-
-/**
- * @brief Retrieves the configuration interface/cpu from the config value.
- * @param name The section name to look for.
- * @param type Type of configuration.
- * @return a pointer on a swd_ctrl_config upon success, NULL otherwise.
- */
-static const swd_ctrl_config *swd_ctrl_get_cfg(const char *name,
-					       enum config_type type)
-{
-	char cfg[CONFIG_STR_LEN_MAX] = "";
-	const char *match = NULL;
-
-	if (!name) {
-		ERROR("Cannot find null cfg name\n");
-		return NULL;
-	}
-
-	for (unsigned int i=0; i<ARRAY_SIZE(swd_ctrl_cfgs);i++) {
-		if (type != swd_ctrl_cfgs[i].type)
-			continue;
-
-		strncpy(cfg, swd_ctrl_cfgs[i].cfg_name, sizeof(cfg -1));
-		if (!(match = strtok(cfg,"*")))
-			match = swd_ctrl_cfgs[i].cfg_name;
-
-		if (!strncmp(match, name, strnlen(match,
-			     sizeof(swd_ctrl_cfgs[i].cfg_name) - 1))) {
-			DEBUG("Found configuration %s", swd_ctrl_cfgs[i].cfg_name);
-			return &swd_ctrl_cfgs[i];
-		}
-	}
-
-	ERROR("No configuration %s\n", name);
-	return NULL;
-}
-
-/**
- * @brief Function that find get the configuration string depending on the type
- * 		and the cfg_param provided.
- * @param param cfg_param to provide providing the information about the section
- * 		and the config field.
- * @param type The type of parameter CPU/INTERFACE.
- * @return return the command to execute upon success, NULL otherwise.
- */
-static const char *swd_ctrl_find_param_gbl_cfg(cfg_param * const param,
-					  enum config_type type)
-{
-	const swd_ctrl_config *swd_ctrl_cfg;
-	const char *param_str = CONFIG_HELPER_GET_STR(param);
-
-	if (!param_str) {
-		return NULL;
-	}
-
-	if (!(swd_ctrl_cfg = swd_ctrl_get_cfg(param_str, type))) {
-		return NULL;
-	}
-
-	return swd_ctrl_cfg->cmd;
-}
 
 /**
  * @brief Retrieve information from the configuration module to set the
@@ -165,7 +79,7 @@ static int swd_ctrl_set_from_gbl_cfg(swd_ctrl_obj * const obj,
 {
 	swd_ctrl_priv_data *pdata = (swd_ctrl_priv_data *) obj->pdata;
 	swd_ctrl_config *swd_ctrl_cfg;
-	const char *config_str;
+	const char *param_str;
 
 	cfg_param param = {
 				.section = CFG_SECTION_SWD_CTRL,
@@ -173,11 +87,8 @@ static int swd_ctrl_set_from_gbl_cfg(swd_ctrl_obj * const obj,
 				.name = swd_ctrl_config_gbl[type],
 			  };
 
-	if (!(config_str = swd_ctrl_find_param_gbl_cfg(&param, type))) {
-		return -1;
-	}
-
-	pdata->cfgs[type] = config_str;
+	param_str = CONFIG_HELPER_GET_STR(&param);
+	snprintf(pdata->cfgs[type], STRING_MAX_LENGTH - 1, "-f%s", param_str);
 	return 0;
 }
 
