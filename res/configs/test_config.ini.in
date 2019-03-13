@@ -24,8 +24,8 @@ commit-id_nuttx = 89424218421884217fabce
 config_nuttx = nutexx_defconfig
 
 [swd-ctrl]
-name_cpu = stm32f407zgt6
-name_interface = stlink-v2
+name_cpu = target/stm32f407.cfg
+name_interface = interface/stlink-v2.cfg
 
 [ext-bins]
 ; needed to use addr2line executable
