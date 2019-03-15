@@ -33,7 +33,7 @@ autotoolized_src()
 	shift
 	local fname=${1}
 	shift
-	src_files=$@
+	local src_files=$@
 
 	if [ -e ${src_dir}/.stamp_autoolized ]; then
 		return
@@ -44,8 +44,6 @@ autotoolized_src()
 	if [ $? -eq 0 ]; then
 		touch ${src_dir}/.stamp_autoolized
 	fi
-
-	exit 0
 }
 
 apply_patches()
