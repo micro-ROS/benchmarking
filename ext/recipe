@@ -33,7 +33,7 @@ autotoolized_src()
 	shift
 	local fname=${1}
 	shift
-	local src_files=$@
+	src_files=$@
 
 	if [ -e ${src_dir}/.stamp_autoolized ]; then
 		return
@@ -44,31 +44,40 @@ autotoolized_src()
 	if [ $? -eq 0 ]; then
 		touch ${src_dir}/.stamp_autoolized
 	fi
+
+	exit 0
 }
 
 apply_patches()
 {
-	local DEST=${1}
+	local src_dir=${1}
 	shift
-	local LIST_PATCHES=$@ 
+	local file=${1}
+	shift
+	local filename=${1}
+	shift
+	patche_files=$@
 
-	echo "PATCHED $LIST_PATCHES"
-	cd $DEST
+	echo "Patched ${patche_files}"
+
+	if [ -e ${src_dir}/.stamp_patched ]; then
+		return
+	fi
 	
-	for i in $LIST_PATCHES; do
+	cd $src_dir
+	for i in ${patche_files}; do
 		echo  "Applying patch $i"
- 		patch -p1 <  ../$i
+ 		patch -p1 <  ../patches/${filename}/${i}
 	done
 
 	if [ $? -ne 0 ]; then
 	       printf "${RED} ${file}: ${filename}_applying_patch did not succeed${RESET}\n"
 	else 
-		touch .stamp_patched
+		touch ./.stamp_patched
         fi
 
 	cd ..
 }
-
 
 recipes=$(find . -maxdepth 1 -iname "*.mk")
 
@@ -127,13 +136,9 @@ do
 	fi
 
 	list_patches=$(eval echo \$"${filename}_patches")
-	if [ ! -e $git_src_dir/.stamp_patched ]; then
-		if [ ! -z $list_patches ]; then
-			apply_patches $git_src_dir $list_patches
-		fi
-	else 
-		printf "${YELLOW} ${file}: sources already patched " 
-		printf	"If you want to force patching delete .stamp_patched${RESET}\n"
+	echo "List of patches ${list_patches}"
+	if [ ! -z "${list_patches}" ]; then
+		apply_patches $git_src_dir $file $filename ${list_patches}
 	fi
 
 	cd $git_src_dir
