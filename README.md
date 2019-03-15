@@ -36,6 +36,24 @@ The list of packet needed for the application to work:
 - pkg-config
 - texinfo
 
+```console
+
+foo@bar:~$ sudo apt install \
+	autoconf \
+	autotools-dev \
+	binutils \
+	check \
+	doxygen \
+	gcc-arm-none-eabi \
+	git \
+	libtool \
+	libusb-1.0 \
+	libftdi-dev \
+	make \
+	pkg-config 
+	texinfo
+```
+
 ## Hardware Prerequisites 
 The benchmarking tool is using hardware debugger to reduce the overhead in code.
 Status  about the different debugger/serial/board that t
