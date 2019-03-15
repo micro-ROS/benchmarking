@@ -50,7 +50,7 @@ foo@bar:~$ sudo apt install \
 	libusb-1.0 \
 	libftdi-dev \
 	make \
-	pkg-config 
+	pkg-config \
 	texinfo
 ```
 
