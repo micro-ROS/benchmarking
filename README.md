@@ -71,7 +71,7 @@ the use. The configuration file used by the application is located at
 __res/tests/test_config.ini__
 
 More explanations about the fields are available in the template located at
-__res/tests/config_decoder.ini__
+__res/configs/default_decoder.ini__
 
 
 
