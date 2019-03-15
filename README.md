@@ -56,7 +56,7 @@ foo@bar:~$ sudo apt install \
 
 ## Hardware Prerequisites 
 The benchmarking tool is using hardware debugger to reduce the overhead in code.
-Status  about the different debugger/serial/board that t
+Status  about the different debugger/serial/board:
 
 ### Debuggers
 List of debug probe supported:
@@ -68,6 +68,14 @@ List of debug probe supported:
 ### UART (SWO output)
 Every UART device that support the format 115200 8N1 should be working.
 
+### UART permission
+It might be necessary to give the user permission to the tty as follow:
+
+```console
+foo@bar:~$ sudo usermod -a -G dialout ${USER} # Need to logoff/login
+
+```
+
 ### Board
 List of boards:
 
@@ -76,7 +84,7 @@ List of boards:
 | [Olimex E407](https://www.olimex.com/Products/ARM/ST/STM32-E407/open-source-hardware) | Working | Not available |
 | [STM32L152-Discovery](https://www.st.com/en/evaluation-tools/32l152cdiscovery.html) | Not Tested | Not available |
 
-## Compiling 
+### Compiling 
 To compile:
 ```console
 foo@bar:~$ ./autogen.sh # Will retrieve dependencies and compile them.
@@ -90,8 +98,6 @@ __res/tests/test_config.ini__
 
 More explanations about the fields are available in the template located at
 __res/configs/default_decoder.ini__
-
-
 
 ## Execution
 The compiled application will be located at __apps/decoder__. 
