@@ -19,6 +19,7 @@ However the *Stack* and *Heap* memory analysis will first target the nuttx *kern
 
 ## Software Prerequisites
 The application was tested on Ubuntu 18.04.1 LTS. It shall work on other
+linux distributions.
 
 The list of packet needed for the application to work:
 
