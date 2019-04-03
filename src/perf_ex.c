@@ -493,7 +493,12 @@ perf_ex_set_elf_gbl_config(perf_ex_obj * const obj)
 			  };
 
 	pdata->elf = CONFIG_HELPER_GET_STR(&param);
-	return pdata->toolchain == NULL ? -1: 0;
+
+	if (!param.found) {
+		return -1;
+	}
+
+	return 0;
 }
 
 
@@ -535,7 +540,12 @@ perf_ex_set_tc_gbl_config(perf_ex_obj * const obj)
 			  };
 
 	pdata->toolchain = CONFIG_HELPER_GET_STR(&param);
-	return pdata->toolchain == NULL ? -1: 0;
+
+	if (!param.found) {
+		return -1;
+	}
+
+	return 0;
 }
 
 

@@ -10,6 +10,8 @@
 
 #include <config_lib.h>
 
+#include <stdbool.h>
+
 #ifdef  MESSAGE_DYNAMIC
 
 #else
@@ -113,6 +115,9 @@ typedef struct {
 		int		s32;
 		unsigned int	u32;
 	} value;
+
+	/** Set to true if the value is found, to false otherwise */
+	bool found;
 } cfg_param;
 
 /** This is a helper to create a structure structure */

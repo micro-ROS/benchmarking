@@ -75,6 +75,10 @@ static const char *swd_ctrl_get_script_cpu(void)
 			  };
 
 	param_str = CONFIG_HELPER_GET_STR(&param);
+	if (!param.found) {
+		return NULL;
+	}
+
 	if (!strcmp(CFG_SECTION_SESSION_TYPE_VAL_PM, param_str)) {
 		param_str = CFG_SECTION_SWD_CTRL_CPU_PM;
 	} else if (!strcmp(CFG_SECTION_SESSION_TYPE_VAL_PE, param_str)) {
@@ -116,6 +120,9 @@ static int swd_ctrl_set_from_gbl_cfg(swd_ctrl_obj * const obj,
 	}
 
 	param_str = CONFIG_HELPER_GET_STR(&param);
+	if (!param.found) {
+		return -1;
+	}
 	snprintf(pdata->cfgs[type], STRING_MAX_LENGTH - 1, "-f%s", param_str);
 
 	return 0;
