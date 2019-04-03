@@ -21,6 +21,10 @@
 typedef struct {
 	/** Context needed by the libswo library. */
 	struct libswo_context *swo_ctx;
+	/**
+	 * Filter callback set upon init depending on
+	 * the session's type.
+	 */
 	bool (*filter_cb) (const union libswo_packet *packet);
 	/** Number of packet decoded on last decoding sessionl */
 	unsigned int cur_packet_decoded;
@@ -103,6 +107,8 @@ static struct {
 /**
  * @brief This is the filter callback for itm message.
  * 		The filter is used for memory analysis.
+ * @return false if the data does not fit the filter,
+ * 		true otherwise.
  */
 static bool filter_itm(const union libswo_packet *packet)
 {
@@ -121,6 +127,8 @@ static bool filter_itm(const union libswo_packet *packet)
 /**
  * @brief This is the filter callback for program counter value.
  * 		The filter is used for performance analysis.
+ * @return false if the data does not fit the filter,
+ * 		true otherwise.
  */
 static bool filter_pc(const union libswo_packet *packet)
 {
@@ -172,8 +180,6 @@ static int packet_cb(struct libswo_context *ctx,
 	name = default_handlers[packet->type].name;
 	default_handlers[packet->type].pkt_cb(packet, count, name);
 #endif
-
-
 	memcpy(&packets_decoded[pdata->cur_packet_decoded], packet, sizeof(*packet));
 	pdata->cur_packet_decoded++;
 
