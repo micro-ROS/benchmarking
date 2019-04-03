@@ -343,16 +343,28 @@ static int form_json_init_nodes(form_obj * const obj)
 		switch(cfg->type) {
 			case CONFIG_STR:
 				value_str = CONFIG_HELPER_GET_STR(cfg);
+				if (!cfg->found) {
+					return -1;
+				}
+
 				rc = form_json_create_str_node(parent, name,
 							       value_str);
 			break;
 			case CONFIG_INT:
 				value_fl = (float) CONFIG_HELPER_GET_S32(cfg);
+				if (!cfg->found) {
+					return -1;
+				}
+
 				rc = form_json_create_num_node(parent, name,
 							       value_fl);
 			break;
 			case CONFIG_UNSIGNED_INT:
 				value_fl = (float) CONFIG_HELPER_GET_U32(cfg);
+				if (!cfg->found) {
+					return -1;
+				}
+
 				rc = form_json_create_num_node(parent, name,
 							       value_fl);
 			break;

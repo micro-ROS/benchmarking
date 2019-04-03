@@ -82,7 +82,8 @@ static void decoder_catch_signal(int signo) {
 	pipeline_set_end_all();
 }
 
-#define DECODER_CONFIG_PATH_DEFAULT	BENCHMARKING_TOP_DIR "/res/configs/test_config.ini"
+#define DECODER_CONFIG_PATH_DEFAULT	BENCHMARKING_TOP_DIR \
+					"/res/configs/test_config_mem.ini"
 void decoder_init_config(config_ini_obj *cfg)
 {
 	DEBUG("initializing config...\n");
@@ -101,6 +102,8 @@ void decoder_init_config(config_ini_obj *cfg)
 
 void decoder_init_uart(uart_obj *uart)
 {
+	unsigned int uart_baudrate;
+	const char *uart_dev;
 	cfg_param uart_cfg = {
 		.section = "uart-swo",
 	};
@@ -114,9 +117,13 @@ void decoder_init_uart(uart_obj *uart)
 
 	uart_cfg.name = "device";
 	uart_cfg.type = CONFIG_STR;
-	DEBUG("\t-device used: %s\n", CONFIG_HELPER_GET_STR(&uart_cfg));
-	if (uart->uart_set_dev(uart,
-				  CONFIG_HELPER_GET_STR(&uart_cfg))) {
+	uart_dev = CONFIG_HELPER_GET_STR(&uart_cfg);
+	if (!uart_cfg.found) {
+		exit(EXIT_FAILURE);
+	}
+
+	DEBUG("\t-device used: %s\n", uart_dev);
+	if (uart->uart_set_dev(uart, uart_dev)) {
 		exit(EXIT_FAILURE);
 	}
 
@@ -126,9 +133,13 @@ void decoder_init_uart(uart_obj *uart)
 
 	uart_cfg.name = "baudrate";
 	uart_cfg.type = CONFIG_UNSIGNED_INT;
-	DEBUG("\t-baudrate used: %u\n", CONFIG_HELPER_GET_U32(&uart_cfg));
-	if (uart->uart_set_baudrate(uart,
-				       CONFIG_HELPER_GET_U32(&uart_cfg))) {
+	uart_baudrate = CONFIG_HELPER_GET_U32(&uart_cfg);
+	DEBUG("\t-baudrate used: %u\n", uart_baudrate);
+
+	if (!uart_cfg.found) {
+		exit(EXIT_FAILURE);
+	}
+	if (uart->uart_set_baudrate(uart, uart_baudrate)) {
 		exit(EXIT_FAILURE);
 	}
 

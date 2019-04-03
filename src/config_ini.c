@@ -64,7 +64,7 @@ static cfg_param * const  config_ini_get_value(config_obj * const obj,
 			 &param->value.s32);
 	break;
 	case CONFIG_UNSIGNED_INT:
-		ini_sget(cfg, param->section, param->name, "%u",
+		rc = ini_sget(cfg, param->section, param->name, "%u",
 		         &param->value.u32);
 	break;
 	case CONFIG_STR:
@@ -80,8 +80,11 @@ static cfg_param * const  config_ini_get_value(config_obj * const obj,
 	}
 
 	if (!rc) {
-		ERROR("Could not get param [%s]-> %s\n",
+		param->found = false;
+		ERROR("Could not get param from section [%s] field: %s\n",
 		      param->section, param->name);
+	} else {
+		param->found = true;
 	}
 
 	return param;
