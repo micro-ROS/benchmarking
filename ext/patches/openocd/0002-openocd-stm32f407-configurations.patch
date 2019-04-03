@@ -1,0 +1,188 @@
+commit e23cc946811403bbd57738f52701970e46e29b4d
+Author: Alexandre Malki <amalki@piap.pl>
+Date:   Wed Apr 3 11:28:38 2019 +0200
+
+    tcl: target: stm32f407: adding performance execution/memory benchmarking
+
+diff --git a/tcl/target/stm32f407_pe.cfg b/tcl/target/stm32f407_pe.cfg
+new file mode 100644
+index 00000000..bd641ab4
+--- /dev/null
++++ b/tcl/target/stm32f407_pe.cfg
+@@ -0,0 +1,84 @@
++# This file is an example of how to configure ITM/ETM tracing
++# using openocd if you do not want to modify the application.
++#
++# Use like this:
++# openocd -f configure-trace.openocd
++
++# Modify there to match your debugger hw & cpu
++source [find interface/stlink-v2.cfg]
++source [find target/stm32f4x.cfg]
++
++# Helper functions
++proc setbits {ADDR MASK} {
++   set data(0) 0
++   mem2array data 32 $ADDR 1
++   set data(0) [expr $data(0) | $MASK]
++   array2mem data 32 $ADDR 1
++}
++
++proc clearbits {ADDR MASK} {
++   set data(0) 0
++   mem2array data 32 $ADDR 1
++   set data(0) [expr $data(0) & ~$MASK]
++   array2mem data 32 $ADDR 1
++}
++
++# Register addresses
++set RCC_APB2ENR          0x40023044
++set AFIO_MAPR            0x40010004
++set DBGMCU_CR            0xe0042004
++set COREDEBUG_DEMCR      0xe000edfc
++set TPI_CSPR             0xe0040004
++set TPI_ACPR             0xe0040010
++set TPI_SPPR             0xe00400f0
++set TPI_FFCR             0xe0040304
++set DWT_CTRL             0xe0001000
++set ITM_LAR              0xe0000fb0
++set ITM_TCR              0xe0000e80
++set ITM_TENR             0xe0000e00
++set ITM_PRIVTENR         0xe0000e40
++set ETM_LAR              0xe0041fb0
++set ETM_CR               0xe0041000
++set ETM_TRIGEVENT        0xe0041008
++set ETM_TRACEIDR         0xe0041200
++set ETM_TECR1            0xe0041024
++set ETM_FFRR             0xe0041028
++set ETM_FFLR             0xe004102c
++set ETM_TEEVR            0xe0041020
++set ETM_CCER             0xe00410f4
++
++# Stop the CPU while we configure
++init
++halt
++sleep 1000
++# STM32 IO pin config
++#setbits $RCC_APB2ENR 1                     ;# AFIOEN
++
++# STM32 STM docen.DM00031020 S38.17.10 and ARMv7-M DDI0403E_d_armv7m_arm
++# Enable access to trace regs
++mww $COREDEBUG_DEMCR 0x01000000
++
++# TPIU config
++# Trace clock divider HCLK/(x+1). Set to 115200
++mww $TPI_ACPR 0x5B1
++
++# Pin protocol = NRZ/USART, 00 = Parallel trace port mode,
++# 01 = Asynchronous SWO, using Manchester encoding, 10 = Asynchronous SWO,
++#using NRZ encoding.
++mww $TPI_SPPR 0x2
++
++# Enable TPIU framing (0x100 to disable) - continuous formatting disabled
++mww $TPI_FFCR 0x100
++
++# Enable Trace
++setbits $DBGMCU_CR 0x20
++
++# DWT config
++mww $DWT_CTRL 0x40001E1F
++
++# ITM config
++mww $ITM_LAR 0xC5ACCE55
++mww $ITM_TCR 0x0001030F
++
++# Resume CPU and exit openocd
++resume
+diff --git a/tcl/target/stm32f407_pm.cfg b/tcl/target/stm32f407_pm.cfg
+new file mode 100644
+index 00000000..7077ff96
+--- /dev/null
++++ b/tcl/target/stm32f407_pm.cfg
+@@ -0,0 +1,86 @@
++# This file is an example of how to configure ITM/ETM tracing
++# using openocd if you do not want to modify the application.
++#
++# Use like this:
++# openocd -f configure-trace.openocd
++
++# Modify there to match your debugger hw & cpu
++source [find interface/stlink-v2.cfg]
++source [find target/stm32f4x.cfg]
++
++# Helper functions
++proc setbits {ADDR MASK} {
++   set data(0) 0 
++   mem2array data 32 $ADDR 1
++   set data(0) [expr $data(0) | $MASK]
++   array2mem data 32 $ADDR 1
++}
++
++proc clearbits {ADDR MASK} {
++   set data(0) 0 
++   mem2array data 32 $ADDR 1
++   set data(0) [expr $data(0) & ~$MASK]
++   array2mem data 32 $ADDR 1
++}
++
++# Register addresses
++set RCC_APB2ENR          0x40023044
++set AFIO_MAPR            0x40010004
++set DBGMCU_CR            0xe0042004
++set COREDEBUG_DEMCR      0xe000edfc
++set TPI_CSPR             0xe0040004
++set TPI_ACPR             0xe0040010
++set TPI_SPPR             0xe00400f0
++set TPI_FFCR             0xe0040304
++set DWT_CTRL             0xe0001000
++set ITM_LAR              0xe0000fb0
++set ITM_TCR              0xe0000e80
++set ITM_TENR             0xe0000e00
++set ITM_PRIVTENR         0xe0000e40
++set ETM_LAR              0xe0041fb0
++set ETM_CR               0xe0041000
++set ETM_TRIGEVENT        0xe0041008
++set ETM_TRACEIDR         0xe0041200
++set ETM_TECR1            0xe0041024
++set ETM_FFRR             0xe0041028
++set ETM_FFLR             0xe004102c
++set ETM_TEEVR            0xe0041020
++set ETM_CCER             0xe00410f4
++
++# Stop the CPU while we configure
++init
++halt
++sleep 1000
++# STM32 IO pin config
++#setbits $RCC_APB2ENR 1                     ;# AFIOEN
++
++# STM32 STM docen.DM00031020 S38.17.10 and ARMv7-M DDI0403E_d_armv7m_arm
++# Enable access to trace regs
++mww $COREDEBUG_DEMCR 0x01000000
++
++# TPIU config
++# Trace clock divider HCLK/(x+1) configured to 115200 bauds/s
++mww $TPI_ACPR 0x5B1
++
++# Pin protocol = NRZ/USART, 00 = Parallel trace port mode,
++# 01 = Asynchronous SWO, using Manchester encoding, 10 = Asynchronous SWO,
++#using NRZ encoding.
++mww $TPI_SPPR 0x2
++
++# Enable TPIU framing (0x100 to disable) - continuous formatting disabled
++mww $TPI_FFCR 0x100
++
++# Enable Trace
++setbits $DBGMCU_CR 0x20
++
++# DWT config
++mww $DWT_CTRL 0x400007BB
++
++# ITM config
++mww $ITM_LAR 0xC5ACCE55
++mww $ITM_TCR 0x0000011f
++mww $ITM_TENR 0x1
++mww $ITM_PRIVTENR 0x01
++
++# Resume CPU and exit openocd
++resume
