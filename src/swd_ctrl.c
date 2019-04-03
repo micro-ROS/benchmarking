@@ -44,14 +44,6 @@ typedef struct {
 	const char		cmd[STRING_MAX_LENGTH];
 } swd_ctrl_config;
 
-/** 
- * Configuration to section to retrieve from the configuration module
- */
-static const char *swd_ctrl_config_gbl[CFG_CPU+1] = {
-						CFG_SECTION_SWD_CTRL_IF,
-						CFG_SECTION_SWD_CTRL_CPU
-					};
-
 /**
  * SWD control Internal structure (private data).
  */
@@ -68,8 +60,37 @@ typedef struct {
 static swd_ctrl_priv_data swd_ctrl_pdata;
 
 /**
+ * @brief Retrieves the type of session from the configuration to
+ * 		get the correct configuration file.
+ * @return The type field name (exection or memory benchmarking session).
+ */
+static const char *swd_ctrl_get_script_cpu(void)
+{
+	const char *param_str;
+
+	cfg_param param = {
+				.section = CFG_SECTION_SESSION,
+				.type = CONFIG_STR,
+				.name = CFG_SECTION_SESSION_TYPE,
+			  };
+
+	param_str = CONFIG_HELPER_GET_STR(&param);
+	if (!strcmp(CFG_SECTION_SESSION_TYPE_VAL_PM, param_str)) {
+		param_str = CFG_SECTION_SWD_CTRL_CPU_PM;
+	} else if (!strcmp(CFG_SECTION_SESSION_TYPE_VAL_PE, param_str)) {
+		param_str = CFG_SECTION_SWD_CTRL_CPU_PE;
+	} else {
+		ERROR("Could not find the script required\n");
+		param_str = NULL;
+	}
+
+	return  param_str;
+}
+
+/**
  * @brief Retrieve information from the configuration module to set the
- * 		configuration file (openocd scripts).
+ * 		configuration file (openocd scripts). It will check the
+ * 		type of execution. 
  * @param obj swd_ctrl_obj that is the object that controls the SWD.
  * @param type the type of configuration needed CPU/INTERFACE.
  * @return 0 upon success, -1 otherwise
@@ -84,11 +105,19 @@ static int swd_ctrl_set_from_gbl_cfg(swd_ctrl_obj * const obj,
 	cfg_param param = {
 				.section = CFG_SECTION_SWD_CTRL,
 				.type = CONFIG_STR,
-				.name = swd_ctrl_config_gbl[type],
 			  };
+
+	if (CFG_INTERFACE == type)  {
+		param.name = CFG_SECTION_SWD_CTRL_IF;
+	} else {
+		if (!(param.name = swd_ctrl_get_script_cpu())) {
+			return -1;
+		}
+	}
 
 	param_str = CONFIG_HELPER_GET_STR(&param);
 	snprintf(pdata->cfgs[type], STRING_MAX_LENGTH - 1, "-f%s", param_str);
+
 	return 0;
 }
 

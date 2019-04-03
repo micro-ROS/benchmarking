@@ -41,12 +41,19 @@
 /* Configuration */
 #ifdef CONFIG_LIBINI
 
+/* Section Session */
+#define CFG_SECTION_SESSION		"session"
+#define CFG_SECTION_SESSION_TYPE	"type"
+#define CFG_SECTION_SESSION_TYPE_VAL_PE	"execution-performance"
+#define CFG_SECTION_SESSION_TYPE_VAL_PM	"memory-performance"
+
 /* Section SWD CTRL */
 #define CFG_SECTION_SWD_CTRL		"swd-ctrl"
 
 /* Configuration regarding the SWD module */
-#define CFG_SECTION_SWD_CTRL_IF		"name_interface"
-#define CFG_SECTION_SWD_CTRL_CPU	"name_cpu"
+#define CFG_SECTION_SWD_CTRL_IF		"script_interface"
+#define CFG_SECTION_SWD_CTRL_CPU_PE	"script_cpu_perf_ex"
+#define CFG_SECTION_SWD_CTRL_CPU_PM	"script_cpu_perf_mem"
 
 /* Section EXT BINS */
 #define CFG_SECTION_EXT_BIN		"ext-bins"
