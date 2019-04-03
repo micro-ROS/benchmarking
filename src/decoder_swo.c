@@ -21,6 +21,7 @@
 typedef struct {
 	/** Context needed by the libswo library. */
 	struct libswo_context *swo_ctx;
+	bool (*filter_cb) (const union libswo_packet *packet);
 	/** Number of packet decoded on last decoding sessionl */
 	unsigned int cur_packet_decoded;
 	/** Number of packet decoded since the start of the applicationl */
@@ -99,6 +100,37 @@ static struct {
 	set_handler(LIBSWO_PACKET_TYPE_DWT_DATA_VALUE,  default_packet_handler),
 };
 
+/**
+ * @brief This is the filter callback for itm message.
+ * 		The filter is used for memory analysis.
+ */
+static bool filter_itm(const union libswo_packet *packet)
+{
+	if (!((1 << LIBSWO_PACKET_TYPE_EXT | 1 << LIBSWO_PACKET_TYPE_DWT_PC_VALUE)
+	& (1 << packet->type)))
+		return false;
+
+	if (!packet->ext.source == LIBSWO_EXT_SRC_ITM) {
+		return false;
+	}
+
+	DEBUG("Gotten ITM packet value %u\n", packet->ext.value);
+	return true;
+}
+
+/**
+ * @brief This is the filter callback for program counter value.
+ * 		The filter is used for performance analysis.
+ */
+static bool filter_pc(const union libswo_packet *packet)
+{
+	if (!((1 << LIBSWO_PACKET_TYPE_DWT_PC_SAMPLE |
+			 1 << LIBSWO_PACKET_TYPE_DWT_PC_VALUE)	& (1 << packet->type)))
+		return false;
+
+	return true;
+}
+
 /** 
  * @brief This is the general packet callback. This callback will be called each
  *		time a packet is decoded.
@@ -116,11 +148,7 @@ static int packet_cb(struct libswo_context *ctx,
 	decoder_swo_priv_data *pdata =
 		(decoder_swo_priv_data *) user_data;
 
-#if 1
-	if (!((1 << LIBSWO_PACKET_TYPE_DWT_PC_SAMPLE | 1 << LIBSWO_PACKET_TYPE_DWT_PC_VALUE)
-	& (1 << packet->type)))
-		return true;
-#endif
+	/** Default filters */
 	if (((packet->type < LIBSWO_PACKET_TYPE_UNKNOWN) ||
 		(packet->type > LIBSWO_PACKET_TYPE_HW)) &&
 		((packet->type < LIBSWO_PACKET_TYPE_DWT_EVTCNT) ||
@@ -130,12 +158,21 @@ static int packet_cb(struct libswo_context *ctx,
 		return true;
 	}
 
+	if ((1 << LIBSWO_PACKET_TYPE_UNKNOWN) & (1 << packet->type))
+		return true;
+
+
+	/** Dedicated filter depending on the packet */
+	if (!pdata->filter_cb(packet)) {
+		return true;
+	}
+
+#ifdef DEBUG
 	count = default_handlers[packet->type].count;
 	name = default_handlers[packet->type].name;
 	default_handlers[packet->type].pkt_cb(packet, count, name);
+#endif
 
-	if ((1 << LIBSWO_PACKET_TYPE_UNKNOWN) & (1 << packet->type))
-		return true;
 
 	memcpy(&packets_decoded[pdata->cur_packet_decoded], packet, sizeof(*packet));
 	pdata->cur_packet_decoded++;
@@ -232,6 +269,37 @@ static int decoder_swo_free_instance(decoder_swo_priv_data * const pdata)
 	return 0;
 }
 
+/**
+ * @brief Funciton setting the filter callback necessary
+ * 		depending on the type of session being run.
+ * @param obj decoder object.
+ * @return 0 upon success, -1 otherwise.
+ */
+static int decoder_swo_set_filter(decoder_swo_obj * const obj)
+{
+	const char *param_str;
+	decoder_swo_priv_data *pdata = 
+			(decoder_swo_priv_data *) obj->pdata;
+
+	cfg_param param = {
+				.section = CFG_SECTION_SESSION,
+				.type = CONFIG_STR,
+				.name = CFG_SECTION_SESSION_TYPE,
+			  };
+
+	param_str = CONFIG_HELPER_GET_STR(&param);
+	if (!strcmp(CFG_SECTION_SESSION_TYPE_VAL_PE, param_str)) {
+		pdata->filter_cb = filter_pc;
+	} else if (!strcmp(CFG_SECTION_SESSION_TYPE_VAL_PM, param_str)) {
+		pdata->filter_cb = filter_itm;
+	} else {
+		ERROR("Could not set correct filter\n");
+		return -1;
+	}
+
+	return 0;
+}
+
 int decoder_swo_init(decoder_swo_obj * const obj)
 {
 	processing_obj *proc_obj = (processing_obj *) obj;
@@ -248,6 +316,10 @@ int decoder_swo_init(decoder_swo_obj * const obj)
 
 	obj->pdata = pdata;
 
+	if (decoder_swo_set_filter(obj)) {
+		goto filter_setup_failed;
+	}
+
 	if (message_init(&pdata->msg)) {
 		goto message_init_failed;
 	}
@@ -257,6 +329,7 @@ int decoder_swo_init(decoder_swo_obj * const obj)
 	proc_obj->data_in  = decoder_swo_data_in;
 	proc_obj->data_out = decoder_swo_data_out;
 
+	
 	if (libswo_init(&pdata->swo_ctx, NULL,
 			(size_t) (2U * msg->total_len(msg))) != LIBSWO_OK) {
 		goto libswo_init_failed;
@@ -272,6 +345,7 @@ int decoder_swo_init(decoder_swo_obj * const obj)
 libswo_set_callback_failed:
 	libswo_exit(pdata->swo_ctx);
 libswo_init_failed:
+filter_setup_failed:
 message_init_failed:
 get_free_instance_failed:
 	processing_fini(proc_obj);

@@ -9,7 +9,7 @@ path-perf = ./perf_output
 [session]
 id = 423b6c0d-65a4-43ec-b4b9-3ff6c3537d2d
 date = 14-02-2019
-type = execution-benchmarking
+type = execution-performance
 
 [board-info] 
 name = olimex-e407
@@ -24,8 +24,9 @@ commit-id_nuttx = 89424218421884217fabce
 config_nuttx = nutexx_defconfig
 
 [swd-ctrl]
-name_cpu = target/stm32f407.cfg
-name_interface = interface/stlink-v2.cfg
+script_cpu_ex_perf = target/stm32f407_ex_perf.cfg
+script_cpu_mem_perf = target/stm32f407_memory.cfg
+script_interface = interface/stlink-v2.cfg
 
 [ext-bins]
 ; needed to use addr2line executable
