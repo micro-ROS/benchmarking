@@ -327,7 +327,7 @@ perf_ex_data_in(processing_obj * const obj, message_obj *const msg)
 				(perf_ex_private_data *) perf ->pdata;
 	union libswo_packet *packets = (union libswo_packet *) msg->ptr(msg);
 	unsigned int pkt_count = msg->length(msg) / sizeof (union libswo_packet);
-	size_t readd = 0;
+	size_t n, readd = 0;
 	unsigned int line;
 	FILE *f_popen;
 	char function[32];
@@ -353,14 +353,15 @@ perf_ex_data_in(processing_obj * const obj, message_obj *const msg)
 			return -1;
 		}
 
-		readd += fscanf(f_popen, PERF_EX_SSCANF_FORMAT, function, file,
+		n = fscanf(f_popen, PERF_EX_SSCANF_FORMAT, function, file,
 				&line);
-		if (EOF == readd) {
+		if (EOF == n) {
 			if (ferror(f_popen)) {
 				ERROR("Error while opening reading output of "
 					"cmd %s\n", pdata->path_cmd);
 			}
 		}
+		readd += n;
 
 		if (!strncmp(function, "??", sizeof(function) - 1)) {
 			WARNING("Cannot find function at address %x\n",
