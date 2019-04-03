@@ -24,7 +24,7 @@ commit-id_nuttx = 89424218421884217fabce
 config_nuttx = nutexx_defconfig
 
 [swd-ctrl]
-script_cpu_ex_perf = target/stm32f407_ex_perf.cfg
+script_cpu_perf_ex = target/stm32f407_ex_perf.cfg
 script_cpu_mem_perf = target/stm32f407_memory.cfg
 script_interface = interface/stlink-v2.cfg
 
