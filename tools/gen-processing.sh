@@ -21,7 +21,7 @@ if [ $# -ne 1 ]; then
 	exit 255
 fi
 
-if [ ${1} -e "-h" ]; then 
+if [ ${1} = "-h" ]; then 
 	usage $0
 	exit 255
 fi
