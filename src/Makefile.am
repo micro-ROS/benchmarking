@@ -6,6 +6,7 @@ libpipeline_la_SOURCES =  \
 			decoder_swo.c 	\
 			file.c		\
 			form_cjson.c	\
+			itm_to_str.c	\
 			message.c 	\
 			pipeline.c 	\
 			perf_ex.c 	\
