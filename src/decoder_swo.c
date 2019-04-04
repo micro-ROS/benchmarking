@@ -112,15 +112,10 @@ static struct {
  */
 static bool filter_itm(const union libswo_packet *packet)
 {
-	if (!((1 << LIBSWO_PACKET_TYPE_EXT | 1 << LIBSWO_PACKET_TYPE_DWT_PC_VALUE)
-	& (1 << packet->type)))
+	if (!(1 << LIBSWO_PACKET_TYPE_INST))
 		return false;
 
-	if (!packet->ext.source == LIBSWO_EXT_SRC_ITM) {
-		return false;
-	}
-
-	DEBUG("Gotten ITM packet value %u\n", packet->ext.value);
+	DEBUG("Gotten ITM packet value %c\n", packet->inst.value);
 	return true;
 }
 
@@ -156,6 +151,12 @@ static int packet_cb(struct libswo_context *ctx,
 	decoder_swo_priv_data *pdata =
 		(decoder_swo_priv_data *) user_data;
 
+
+#ifdef DEBUG
+	count = default_handlers[packet->type].count;
+	name = default_handlers[packet->type].name;
+	default_handlers[packet->type].pkt_cb(packet, count, name);
+#endif
 	/** Default filters */
 	if (((packet->type < LIBSWO_PACKET_TYPE_UNKNOWN) ||
 		(packet->type > LIBSWO_PACKET_TYPE_HW)) &&
@@ -175,11 +176,6 @@ static int packet_cb(struct libswo_context *ctx,
 		return true;
 	}
 
-#ifdef DEBUG
-	count = default_handlers[packet->type].count;
-	name = default_handlers[packet->type].name;
-	default_handlers[packet->type].pkt_cb(packet, count, name);
-#endif
 	memcpy(&packets_decoded[pdata->cur_packet_decoded], packet, sizeof(*packet));
 	pdata->cur_packet_decoded++;
 
