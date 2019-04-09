@@ -9,6 +9,7 @@
 #include <form.h>
 #include <file.h>
 #include <itm_to_str.h>
+#include <itm2mem_info.h>
 #include <pipeline.h>
 #include <processing.h>
 #include <uart.h>
@@ -156,6 +157,15 @@ static void decoder_init_its(itm_to_str_obj *its_obj)
 	DEBUG("itm_to_str object initialized...\n");
 }
 
+static void decoder_init_itm2mi(itm2mem_info_obj *it2mi_obj)
+{
+	DEBUG("initializing itm_to_str...\n");
+	if (itm2mem_info_init(it2mi_obj)) {
+		exit(EXIT_FAILURE);
+	}
+	DEBUG("itm_to_str object initialized...\n");
+}
+
 static void decoder_init_decoder_swo(decoder_swo_obj *dec)
 {
 	DEBUG("initializing decoder swo...\n");
@@ -250,6 +260,7 @@ int main(int argc, char **argv)
 	uart_obj	uart_src;
 	decoder_swo_obj	decoder_proc;
 	itm_to_str_obj	its_proc;
+	itm2mem_info_obj itm2mi_proc;
 	file_obj 	file_raw_data;
 	processing_obj *proc;
 
@@ -265,6 +276,7 @@ int main(int argc, char **argv)
 	decoder_init_swd_ctrl(&swd_ctrl);
 	decoder_init_uart(&uart_src);
 	decoder_init_its(&its_proc);
+	decoder_init_itm2mi(&itm2mi_proc);
 	decoder_init_decoder_swo(&decoder_proc);
 	decoder_init_file_raw_data(&file_raw_data);
 
@@ -273,6 +285,7 @@ int main(int argc, char **argv)
 
 	proc = (processing_obj *) &decoder_proc;
 	proc->register_element(proc, (processing_obj *) &its_proc);
+	proc->register_element(proc, (processing_obj *) &itm2mi_proc);
 
 	proc = (processing_obj *) &its_proc;
 	proc->register_element(proc, (processing_obj *) &file_raw_data);
@@ -288,6 +301,7 @@ int main(int argc, char **argv)
 	DEBUG("Attaching elements\n");
 	pipeline.attach_src(&pipeline, (processing_obj *) &uart_src);
 	pipeline.attach_proc(&pipeline, (processing_obj *) &decoder_proc);
+	pipeline.attach_proc(&pipeline, (processing_obj *) &itm2mi_proc);
 	pipeline.attach_proc(&pipeline, (processing_obj *) &its_proc);
 	pipeline.attach_proc(&pipeline, (processing_obj *) &file_raw_data);
 
