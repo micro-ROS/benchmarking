@@ -109,7 +109,7 @@ static int processing_execute_out(processing_obj * const obj)
 
 	msg->set_length(msg, 0);
 	memset(msg->ptr(msg), 0, msg->total_len(msg));
-	if (obj->data_out(obj, msg) <= 0) {
+	if ((obj->data_out(obj, msg) <= 0) && (!obj->req_end)) {
 		return -1;
 	}
 
