@@ -112,10 +112,9 @@ static struct {
  */
 static bool filter_itm(const union libswo_packet *packet)
 {
-	if (!(1 << LIBSWO_PACKET_TYPE_INST))
+	if (!((1 << LIBSWO_PACKET_TYPE_INST) & (1 << packet->type)))
 		return false;
 
-	DEBUG("Gotten ITM packet value %c\n", packet->inst.value);
 	return true;
 }
 
@@ -167,7 +166,8 @@ static int packet_cb(struct libswo_context *ctx,
 		return true;
 	}
 
-	if ((1 << LIBSWO_PACKET_TYPE_UNKNOWN) & (1 << packet->type))
+	if (((1 << LIBSWO_PACKET_TYPE_UNKNOWN) & (1 << packet->type)) ||
+		((1 <<	LIBSWO_PACKET_TYPE_SYNC) & (1 << packet->type)))
 		return true;
 
 
