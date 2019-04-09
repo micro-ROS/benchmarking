@@ -6,7 +6,8 @@ CXXFLAGS="-g -O2"
 export EXT_LIBS=  \
 	  -L$(abs_top_builddir)/ext/libcjson/.libs/		\
 	  -L$(abs_top_builddir)/ext/libswo/libswo/.libs/	\
-	  -L$(abs_top_builddir)/ext/libini/.libs/ -lini		\
+	  -L$(abs_top_builddir)/ext/libini/.libs/		\
+	  -L$(abs_top_builddir)/ext/libmfa/src/.libs/		\
 	  -L$(abs_top_builddir)/ext/openocd/src/.libs/		\
 	  -L$(abs_top_builddir)/ext/openocd/jimtcl/
 
