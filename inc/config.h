@@ -64,6 +64,11 @@
 #define CFG_SECTION_EXT_BIN_TC		"path_toolchain"
 #define CFG_SECTION_EXT_BIN_ELF		"path_elf"
 
+/* configuration section */
+#define CFG_SECTION_OUTPUT_FILE		"output-files"
+#define CFG_SECTION_OUTPUT_FILE_PM	"path-mem"
+#define CFG_SECTION_OUTPUT_FILE_PE	"path-perf"
+
 #else /* CONFIG_LIBINI */
 
 #error "Not other configuration library than libinit defined"
