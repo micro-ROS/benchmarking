@@ -205,7 +205,6 @@ itm2mem_info_data_out(processing_obj * const proc_obj, message_obj *const msg)
 				(itm2mem_info_private_data *) obj->pdata;
 
 	if (proc_obj->req_end) {
-		printf("*************************** print the mem_get_list\n");
 		return itm2_mem_get_list();
 
 	}
