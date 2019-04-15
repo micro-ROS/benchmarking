@@ -69,22 +69,13 @@ itm2mem_get_next_line(itm2mem_info_private_data * const pdata)
 
 	pos = strchr(&pdata->buffer[buffer_head], '\n');
 	if (!pos && buffer_tail < buffer_head) {
-		printf("before buffer_head = %ld\n", pdata->buffer_head);
-		printf("before buffer_tail = %ld\n", pdata->buffer_tail);
-		printf("before pdata->buffer[buffer_head] = %s\n", &pdata->buffer[buffer_head]);
-		printf("before pdata->buffer[0] = %s\n", pdata->buffer);
-
-		move_sz = (sizeof(pdata->buffer) - 1) - buffer_head; 
-		printf("move_sz = %ld\n", move_sz);
+		move_sz = (sizeof(pdata->buffer) - 1) - buffer_head;
 		memmove(&pdata->buffer[move_sz], pdata->buffer, pdata->buffer_tail + 1); 
 		memmove(pdata->buffer, &pdata->buffer[buffer_head], move_sz); 
 
 		pdata->buffer_head  = 0;
 		pdata->buffer_tail += move_sz ;
 
-		printf("updated buffer_head = %ld\n", pdata->buffer_head);
-		printf("updated buffer_tail = %ld\n", pdata->buffer_tail);
-		printf("updated pdata->buffer[0] = %s\n", pdata->buffer);
 		return itm2mem_get_next_line(pdata);
 	} else if (!pos) {
 		return NULL;
@@ -237,8 +228,6 @@ itm2mem_info_data_in(processing_obj * const proc_obj, message_obj *const msg)
 		pdata->buffer_tail = 
 				(pdata->buffer_tail + 1) % (sizeof(pdata->buffer) - 1);
 	}
-
-	pdata->buffer[pdata->buffer_tail + 1] = '\0';
 
 	return itm2mem_fill_info(pdata);
 }
