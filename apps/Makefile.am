@@ -1,8 +1,8 @@
-bin_PROGRAMS    = decoder mfa
+bin_PROGRAMS    = pea mfa
 
-decoder_SOURCES = main.c
-decoder_CFLAGS	= -I$(top_builddir)/inc
-decoder_LDFLAGS	= $(EXT_LIBS) -L$(top_builddir)/src/	\
+pea_SOURCES = pea.c
+pea_CFLAGS	= -I$(top_builddir)/inc
+pea_LDFLAGS	= $(EXT_LIBS) -L$(top_builddir)/src/	\
 		  -lpipeline -lcjson -lini -lswo	\
 		  -ldl -lpthread -lopenocd -ljim	\
 		  -lmemfootprint
