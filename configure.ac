@@ -79,6 +79,7 @@ AC_ARG_ENABLE([libini],
 AS_IF([test "x$enable_libini" != "xno"], [
 	AC_DEFINE([CONFIG_LIBINI], [], [Activate libini])
 ])
-AC_CONFIG_FILES([Makefile src/Makefile apps/Makefile res/configs/test_config.ini tools/generic-paths.sh])
+AC_CONFIG_FILES([Makefile src/Makefile apps/Makefile \
+res/configs/execution_config.ini res/configs/memory_heap_config.ini  tools/generic-paths.sh])
 AC_OUTPUT
 

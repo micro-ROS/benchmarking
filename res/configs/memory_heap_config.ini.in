@@ -3,13 +3,14 @@ device = /dev/ttyUSB0
 baudrate = 115200
 
 [output-files]
-path-json = ./json_output
-path-perf = ./perf_output
+path-json = @top_abs_path@/json_output
+path-perf = @top_abs_path@/perf_output
+path-mem = @top_abs_path@/mem_output
 
 [session]
 id = 423b6c0d-65a4-43ec-b4b9-3ff6c3537d2d
 date = 14-02-2019
-type = execution-performance
+type = memory-performance
 
 [board-info] 
 name = olimex-e407
@@ -24,12 +25,11 @@ commit-id_nuttx = 89424218421884217fabce
 config_nuttx = nutexx_defconfig
 
 [swd-ctrl]
-script_cpu_perf_ex = target/stm32f407_ex_perf.cfg
-script_cpu_perf_mem = target/stm32f407_memory.cfg
+script_cpu_perf_ex = target/stm32f407_pe.cfg
+script_cpu_perf_mem = target/stm32f407_pm.cfg
 script_interface = interface/stlink-v2.cfg
 
 [ext-bins]
 ; needed to use addr2line executable
-path_toolchain = arm-none-eabi-
-path_elf = @top_abs_path@/res/tests/main.elf
+path_elf = @top_abs_path@/res/tests/nuttx.elf
 path_toolchain = arm-none-eabi-
