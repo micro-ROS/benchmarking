@@ -37,7 +37,7 @@ LTCFLAGS="$CFLAGS"
 
 #Replace
 top_abs_path=`(pwd)`
-ac_list_folder_ext=`(for i in $(ls -d ext/*/); do printf "$i ";  done)`
+ac_list_folder_ext=`(for i in $(ls -d ext/*/); do if [[ "$i" != "ext/patches" ]]; then printf ${i}" " ; fi; done)`
 
 AC_SUBST([top_abs_path])
 AC_SUBST([ac_list_folder_ext])
