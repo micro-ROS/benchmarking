@@ -83,7 +83,9 @@ static void decoder_catch_signal(int signo) {
 	pipeline_set_end_all();
 }
 
-#define DECODER_CONFIG_PATH_DEFAULT	BENCHMARKING_TOP_DIR "/res/configs/test_config.ini"
+#define DECODER_CONFIG_PATH_DEFAULT	BENCHMARKING_TOP_DIR \
+					"/res/configs/execution_config.ini"
+
 void decoder_init_config(config_ini_obj *cfg)
 {
 	DEBUG("initializing config...\n");

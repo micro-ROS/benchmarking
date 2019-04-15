@@ -85,7 +85,7 @@ static void decoder_catch_signal(int signo) {
 }
 
 #define DECODER_CONFIG_PATH_DEFAULT	BENCHMARKING_TOP_DIR \
-					"/res/configs/test_config_mem.ini"
+					"/res/configs/memory_heap_config.ini"
 static void decoder_init_config(config_ini_obj *cfg)
 {
 	DEBUG("initializing config...\n");
