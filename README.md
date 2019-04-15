@@ -92,34 +92,60 @@ foo@bar:~$ ./autogen.sh # Will retrieve dependencies and compile them.
 foo@bar:~$ ./configure
 foo@bar:~$ make
 ```	
-### Configuration file
+
+The tool generates two executables:
+ - pea (performance execution analysis) 
+ - mfa (memory footprint analysis)
+ - msfa (memory stack footprint analysis **TBD**)
+
+### Performance execution analysis
+This tool will perform new analysis execution analysis (CPU usage).
+
+## Configuration file
 Before execution the configuration file need to be changed/adapted depending on
 the use. The configuration file used by the application is located at 
-__res/tests/test_config.ini__
+__res/tests/execution_config.ini__
 
 More explanations about the fields are available in the template located at
-__res/configs/default_decoder.ini__
+__res/configs/default_config.ini__
 
 ## Execution
-The compiled application will be located at __apps/decoder__. 
+The compiled application will be located at __apps/pea__. 
 
 To execute it:
 
 ```console
-foo@bar:~$ ./apps/decoder
+foo@bar:~$ ./apps/pea
 ```
 
 Before executing, the configuration file shall be filled appropriately and
 UART and SWD debugger shall be connected to the targeted embedded platform.
 
+### Memory footprint analysis 
+This tool will perform a memory analysis on an embedded platform.
 
+## Configuration file
+Before execution the configuration file need to be changed/adapted depending on
+the use. The configuration file used by the application is located at 
+__res/tests/memory_heap_config.ini__
+
+More explanations about the fields are available in the template located at
+__res/configs/default_config.ini__
+
+## Execution
+The compiled application will be located at __apps/mfa__. 
+
+To execute it:
+```console
+foo@bar:~$ ./apps/mfa
+```
 
 ## TODOS
 - [ ] Use command line arguments to pass configuration file.
 - [ ] Memory benchmarking 
     - [ ] Static memory analysis.
     - [ ] Stack memory usage per threads.
-    - [ ] Heap memory usage per threads.
+    - [x] Heap memory usage.
 - [ ] Integrate it in the CI.
 - [ ] Dynamic log level.
 
