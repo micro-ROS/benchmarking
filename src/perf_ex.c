@@ -222,8 +222,8 @@ perf_ex_update_function_info(perf_ex_private_data *pdata, exe_info_list *info,
 	}
 
 	if (info->next) {
-		if (perf_ex_match_func_and_line(info->prev, function, path)) {
-			return info->prev;
+		if (perf_ex_match_func_and_line(info->next, function, path)) {
+			return info->next;
 		}
 	}
 
