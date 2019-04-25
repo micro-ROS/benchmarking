@@ -82,7 +82,8 @@ List of boards:
 
 | Board              | Status execution | Status memory |
 | -----------------  | ---------------- | ------------- |
-| [Olimex E407](https://www.olimex.com/Products/ARM/ST/STM32-E407/open-source-hardware) | Working | Not available |
+| [Olimex
+E407](https://www.olimex.com/Products/ARM/ST/STM32-E407/open-source-hardware) | Working | Working Heap (Stack and static not available yet)  |
 | [STM32L152-Discovery](https://www.st.com/en/evaluation-tools/32l152cdiscovery.html) | Not Tested | Not available |
 
 ### Compiling 
