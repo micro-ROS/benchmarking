@@ -5,10 +5,11 @@
 
 #include <stdio.h>
 
-#define DBG_LVL_ERROR		(1 << 0)
-#define DBG_LVL_WARNING		(1 << 1)
-#define DBG_LVL_MESSAGE		(1 << 2)
-#define DBG_LVL_DEBUG		(1 << 3)
+#define DBG_LVL_NONE		(1 << 0)
+#define DBG_LVL_ERROR		(1 << 1)
+#define DBG_LVL_WARNING		(1 << 2)
+#define DBG_LVL_MESSAGE		(1 << 3)
+#define DBG_LVL_DEBUG		(1 << 4)
 #define DBG_LVL_ALL		(DBG_LVL_ERROR|DBG_LVL_WARNING| \
 				 DBG_LVL_MESG|DBG_LVL_DEBUG)
 
