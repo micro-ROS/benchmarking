@@ -17,6 +17,12 @@ git_retrieve()
 	fi
 
 	git clone $1 $2
+
+	if [ $? -ne 0 ]; then
+		printf "\n${RED}===> Processing packet $file ${RESET}\n\n"
+		exit $?
+	fi
+
 	cd $2
 	git checkout $3
 
@@ -78,6 +84,9 @@ apply_patches()
 }
 
 recipes=$(find . -maxdepth 1 -iname "*.mk")
+
+echo $recipes
+exit
 
 for file in $recipes 
 do
