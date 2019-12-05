@@ -19,7 +19,7 @@ git_retrieve()
 	git clone $1 $2
 
 	if [ $? -ne 0 ]; then
-		printf "\n${RED}===> Processing packet $file ${RESET}\n\n"
+		printf "\n${RED}===> Cloning source code $file ${RESET}\n\n"
 		exit $?
 	fi
 
@@ -84,9 +84,6 @@ apply_patches()
 }
 
 recipes=$(find . -maxdepth 1 -iname "*.mk")
-
-echo $recipes
-exit
 
 for file in $recipes 
 do
