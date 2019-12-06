@@ -121,3 +121,7 @@ res/configs/execution_config.ini
 res/configs/memory_heap_config.ini
 inc/config_lib.h
 inc/config_lib.h.in
+
+**stamp-h1
+**.deps/
+
