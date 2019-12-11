@@ -25,6 +25,8 @@ typedef struct {
 	struct mem_info mi[2];
 	/** Temp buffer index switch. */
 	size_t mi_count;
+
+	unsigned int depth_flush;
 	/** 
 	 * Buffer holding characters from 
 	 * the buffer from the ITM trace 
@@ -126,10 +128,10 @@ itm2mem_add_to_backtrace(struct mem_info *minfo, const char *line, unsigned int 
  * 	-1 if an error occured.
  */
 static int
-itm2mem_add_to_list(itm2mem_info_private_data *const pdata, unsigned int depth)
+itm2mem_add_to_list(itm2mem_info_private_data *const pdata)
 {
 	if (pdata->mi_count > 0) {
-		pdata->mi[pdata->mi_count - 1].size = depth;
+		pdata->mi[pdata->mi_count - 1].size = pdata->depth_flush;
 		if (mem_info_append_to_list(&pdata->mi[pdata->mi_count - 1])) {
 			return -1;	
 		}
@@ -144,6 +146,15 @@ itm2mem_add_to_list(itm2mem_info_private_data *const pdata, unsigned int depth)
 	return 0;
 }
 
+static size_t
+itm2mem_force_flush(itm2mem_info_private_data *const pdata)
+{
+	if (pdata->depth_flush)
+		return itm2mem_add_to_list(pdata);
+
+	return 0;
+}
+
 /**
  * \brief this function will fill the mem_info structure according
  * 	to what is received from the ITM trace.
@@ -154,15 +165,14 @@ itm2mem_add_to_list(itm2mem_info_private_data *const pdata, unsigned int depth)
 static size_t
 itm2mem_parse(itm2mem_info_private_data *const pdata, const char *line)
 {
-	static unsigned int depth = 0;
 	size_t total_sz = -1;
 
 	if (!strncmp(line, "alloc ", sizeof("alloc ") - 1)) {
-		if (itm2mem_add_to_list(pdata, depth)) {
+		if (itm2mem_add_to_list(pdata)) {
 			ERROR("Error while adding itm memory info to list\n");
 			goto failed_adding_to_list;
 		}
-		depth = 0;
+		pdata->depth_flush = 0;
 
 		itm2mem_create_new_mem_info(&pdata->mi[pdata->mi_count -1],
 					    line);
@@ -173,8 +183,9 @@ itm2mem_parse(itm2mem_info_private_data *const pdata, const char *line)
 		}
 
 		itm2mem_add_to_backtrace(&pdata->mi[pdata->mi_count - 1],
-					 line, depth);
-		depth++;
+					 line, pdata->depth_flush);
+
+		pdata->depth_flush++;
 	}
 
 	total_sz += strlen(line);
@@ -262,6 +273,7 @@ itm2mem_info_data_out(processing_obj * const proc_obj, message_obj *const msg)
 				(itm2mem_info_private_data *) obj->pdata;
 
 	if (proc_obj->req_end) {
+		itm2mem_force_flush(pdata);
 		return itm2_mem_get_list();
 
 	}
