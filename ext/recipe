@@ -17,6 +17,12 @@ git_retrieve()
 	fi
 
 	git clone $1 $2
+
+	if [ $? -ne 0 ]; then
+		printf "\n${RED}===> Cloning source code $file ${RESET}\n\n"
+		exit $?
+	fi
+
 	cd $2
 	git checkout $3
 
