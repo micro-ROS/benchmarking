@@ -1,6 +1,6 @@
 # Basic recipe
 
-libswo_git=git://git.zapb.de/libswo.git
+libswo_git=https://gitlab.zapb.de/zapb/libswo.git
 libswo_src_dir=./libswo
 libswo_version=master
 
