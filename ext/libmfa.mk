@@ -1,6 +1,6 @@
 # Basic recipe
 
-libmfa_git=git@gitlab.com:micro-ROS/memory_footprint_analyzer.git
+libmfa_git=https://gitlab.com/micro-ROS/benchmarking-tools/benchmarking.git
 libmfa_src_dir=./libmfa
 libmfa_version=master
 
