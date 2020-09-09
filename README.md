@@ -140,7 +140,7 @@ To execute it:
 foo@bar:~$ ./apps/mfa
 ```
 
-# Licensing
+# License
 
 Benchmarking tools are to be open-sourced under the Apache-2.0 license. See the
 LICENSE file for details.
