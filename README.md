@@ -140,12 +140,11 @@ To execute it:
 foo@bar:~$ ./apps/mfa
 ```
 
-## TODOS
-- [ ] Use command line arguments to pass configuration file.
-- [ ] Memory benchmarking 
-    - [ ] Static memory analysis.
-    - [ ] Stack memory usage per threads.
-    - [x] Heap memory usage.
-- [ ] Integrate it in the CI.
-- [ ] Dynamic log level.
+# Licensing
+
+Benchmarking tools are to be open-sourced under the Apache-2.0 license. See the
+LICENSE file for details.
+
+For a list of other open-source components included in ROS 2 system_modes, see
+the file [3rd-party-licenses.md](./3rd-party-licenses.md) .
 
