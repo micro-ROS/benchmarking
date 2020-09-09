@@ -143,7 +143,7 @@ foo@bar:~$ ./apps/mfa
 # License
 
 Benchmarking tools are to be open-sourced under the Apache-2.0 license. See the
-LICENSE file for details.
+[LICENSE](./LICENSE) file for details.
 
 For a list of other open-source components included in ROS 2 system_modes, see
 the file [3rd-party-licenses.md](./3rd-party-licenses.md) .
