@@ -1,7 +1,7 @@
 Third Party Licenses
 ====================
 
-# List of licence per library/software linked with the Benchmarking tool:
+## List of licence per library/software linked with the Benchmarking tool:
 
  - MIT [cJSON](https://github.com/DaveGamble/cJSON#license)
  - MIT [libini](https://github.com/rxi/ini#license)
