@@ -5,7 +5,7 @@ Third Party Licenses
 
  - MIT [cJSON](https://github.com/DaveGamble/cJSON#license)
  - MIT [libini](https://github.com/rxi/ini#license)
- - Apache v2.0 [libmfa] ()
+ - Apache v2.0 [libmfa](https://gitlab.com/micro-ROS/benchmarking-tools/benchmarking/-/blob/master/COPYING)
  - GPL v3 [libswo](https://gitlab.zapb.de/zapb/libswo/-/blob/master/COPYING)
  - GPL v2 [openocd](https://github.com/ntfreak/openocd/blob/v0.10.0/COPYING)
  - GPL v2 [openocd](https://github.com/ntfreak/openocd/blob/v0.10.0/COPYING)
