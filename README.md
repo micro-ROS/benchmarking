@@ -140,6 +140,14 @@ To execute it:
 foo@bar:~$ ./apps/mfa
 ```
 
+## Other resources
+Below are some link to some website and repos related to this repository:
+
+  * [micro-ROS website benchmarking tutorial](https://micro-ros.github.io/docs/tutorials/advanced/benchmarking/)
+  * [micro-ROS main website](https://micro-ros.github.io)
+  * [benchmarking results](https://github.com/micro-ROS/benchmarking-results)
+
+
 # License
 
 Benchmarking tools are to be open-sourced under the Apache-2.0 license. See the
